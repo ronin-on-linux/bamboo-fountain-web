@@ -2,7 +2,7 @@ const CACHE = "bamboo-v1";
 const ASSETS = [
   "/bamboo-fountain-web/",
   "/bamboo-fountain-web/index.html",
-  "/bamboo-fountain/manifest.json",
+  "/bamboo-fountain-web/manifest.json",
   "https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;700&display=swap",
   "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js",
