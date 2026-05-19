@@ -1,0 +1,1723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#111010">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bamboo Fountain">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Bamboo Fountain</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body, #root { height: 100%; }
+  body { overflow: hidden; }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { border-radius: 3px; }
+  [contenteditable] {
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 1.667em;
+  }
+  [contenteditable]:empty::before {
+    content: attr(data-placeholder);
+    opacity: 0.3;
+    pointer-events: none;
+  }
+</style>
+<script>
+  (function() {
+    try {
+      var saved = localStorage.getItem("bf_theme");
+      if (!saved) saved = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      window.__BF_INITIAL_THEME__ = saved;
+    } catch(e) { window.__BF_INITIAL_THEME__ = "dark"; }
+  })();
+</script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect, useCallback } = React;
+
+// ─── UNDO/REDO HISTORY MANAGER ────────────────────────────────────────────────
+// We manage our own history stack instead of relying on the browser's
+// contentEditable undo, which breaks across block splits/merges/type changes.
+//
+// Strategy:
+//  - Every meaningful state change pushes a snapshot: { blocks, focusedIdx, caretOffset }
+//  - Text edits are "coalesced" — rapid typing merges into the previous snapshot
+//    rather than creating one per keystroke (like a proper word processor).
+//  - Structural operations (Enter, Backspace-merge, Tab, type-change) always push
+//    a fresh snapshot immediately, bypassing coalescing.
+//  - We intercept Ctrl+Z / Ctrl+Shift+Z globally and restore the snapshot,
+//    then re-place the caret at the saved offset.
+
+class HistoryManager {
+  constructor() {
+    this.stack = [];   // array of { blocks, focusedIdx, caretOffset }
+    this.cursor = -1;  // points to current position in stack
+    this.MAX = 200;
+    this._coalesceTimer = null;
+    this._pendingSnapshot = null;
+  }
+
+  // Push immediately (structural ops: block split, merge, type change, etc.)
+  push(snapshot) {
+    this._cancelCoalesce();
+    this._commit(snapshot);
+  }
+
+  // Push with coalescing — rapid text edits merge into one undo step
+  pushCoalesced(snapshot, delayMs = 600) {
+    this._pendingSnapshot = snapshot;
+    clearTimeout(this._coalesceTimer);
+    this._coalesceTimer = setTimeout(() => {
+      if (this._pendingSnapshot) {
+        this._commit(this._pendingSnapshot);
+        this._pendingSnapshot = null;
+      }
+    }, delayMs);
+  }
+
+  // Commit a coalesced edit now (e.g. before a structural op)
+  flush() {
+    if (this._pendingSnapshot) {
+      this._cancelCoalesce();
+      this._commit(this._pendingSnapshot);
+      this._pendingSnapshot = null;
+    }
+  }
+
+  _cancelCoalesce() {
+    clearTimeout(this._coalesceTimer);
+    this._coalesceTimer = null;
+  }
+
+  _commit(snapshot) {
+    // Drop any redo future
+    this.stack = this.stack.slice(0, this.cursor + 1);
+    this.stack.push(snapshot);
+    if (this.stack.length > this.MAX) this.stack.shift();
+    this.cursor = this.stack.length - 1;
+  }
+
+  canUndo() { return this.cursor > 0; }
+  canRedo() { return this.cursor < this.stack.length - 1; }
+
+  undo() {
+    this.flush();
+    if (!this.canUndo()) return null;
+    this.cursor--;
+    return this.stack[this.cursor];
+  }
+
+  redo() {
+    if (!this.canRedo()) return null;
+    this.cursor++;
+    return this.stack[this.cursor];
+  }
+
+  // Peek at current snapshot (for comparison)
+  current() { return this.stack[this.cursor] ?? null; }
+}
+
+// ─── THEMES ───────────────────────────────────────────────────────────────────
+const ACCENT_OPTIONS = {
+  dark: [
+    { name:"Neutral",  accent:"#888",    characterColor:"#ddd5c5", sceneColor:"#bbb",    transitionColor:"#777", lyricColor:"#999" },
+    { name:"Jade",     accent:"#3dba7a", characterColor:"#9ee8c0", sceneColor:"#3dba7a", transitionColor:"#2a8a55", lyricColor:"#56c8d8" },
+    { name:"Violet",   accent:"#9b7fea", characterColor:"#c4aff5", sceneColor:"#9b7fea", transitionColor:"#7a5cc0", lyricColor:"#67e8f9" },
+    { name:"Amber",    accent:"#e09050", characterColor:"#fcd34d", sceneColor:"#e09050", transitionColor:"#b06020", lyricColor:"#f0c070" },
+    { name:"Rose",     accent:"#e06080", characterColor:"#f9a8c0", sceneColor:"#e06080", transitionColor:"#a03050", lyricColor:"#f472b6" },
+  ],
+  light: [
+    { name:"Neutral",  accent:"#777",    characterColor:"#1a1a1a", sceneColor:"#444",    transitionColor:"#888", lyricColor:"#888" },
+    { name:"Jade",     accent:"#1a7a50", characterColor:"#0f3d2a", sceneColor:"#1a7a50", transitionColor:"#2a6040", lyricColor:"#0e4a5a" },
+    { name:"Violet",   accent:"#6b3ab0", characterColor:"#3b1a8a", sceneColor:"#6b3ab0", transitionColor:"#4a2090", lyricColor:"#0e4a5a" },
+    { name:"Amber",    accent:"#a05c10", characterColor:"#7a3800", sceneColor:"#a05c10", transitionColor:"#7a4000", lyricColor:"#0e4a5a" },
+    { name:"Rose",     accent:"#b03050", characterColor:"#801030", sceneColor:"#b03050", transitionColor:"#802040", lyricColor:"#0e4a5a" },
+  ],
+  catppuccin: [
+    { name:"Mauve",    accent:"#cba6f7", characterColor:"#89b4fa", sceneColor:"#cba6f7", transitionColor:"#f9e2af", lyricColor:"#a6e3a1" },
+    { name:"Flamingo", accent:"#f2cdcd", characterColor:"#f38ba8", sceneColor:"#f2cdcd", transitionColor:"#fab387", lyricColor:"#89dceb" },
+    { name:"Sky",      accent:"#89dceb", characterColor:"#74c7ec", sceneColor:"#89dceb", transitionColor:"#cba6f7", lyricColor:"#a6e3a1" },
+    { name:"Green",    accent:"#a6e3a1", characterColor:"#94e2d5", sceneColor:"#a6e3a1", transitionColor:"#f9e2af", lyricColor:"#89dceb" },
+    { name:"Peach",    accent:"#fab387", characterColor:"#f9e2af", sceneColor:"#fab387", transitionColor:"#f38ba8", lyricColor:"#a6e3a1" },
+  ],
+  "osaka-jade": [
+    { name:"Jade",   accent:"#3dba7a", characterColor:"#7ee8b8", sceneColor:"#3dba7a", transitionColor:"#f0c070", lyricColor:"#56c8d8" },
+    { name:"Teal",   accent:"#2ab8b8", characterColor:"#7ee0e0", sceneColor:"#2ab8b8", transitionColor:"#e8a060", lyricColor:"#a8e8c0" },
+    { name:"Sakura", accent:"#d87090", characterColor:"#f0a0b8", sceneColor:"#d87090", transitionColor:"#3dba7a", lyricColor:"#89d4e0" },
+    { name:"Gold",   accent:"#d4a830", characterColor:"#f0d070", sceneColor:"#d4a830", transitionColor:"#3dba7a", lyricColor:"#56c8d8" },
+    { name:"Iris",   accent:"#8878d0", characterColor:"#b0a8f0", sceneColor:"#8878d0", transitionColor:"#3dba7a", lyricColor:"#56c8d8" },
+  ],
+  gruvbox: [
+    { name:"Classic", accent:"#b8bb26", characterColor:"#83a598", sceneColor:"#b8bb26", transitionColor:"#fe8019", lyricColor:"#d3869b" },
+    { name:"Aqua",    accent:"#8ec07c", characterColor:"#83a598", sceneColor:"#8ec07c", transitionColor:"#fabd2f", lyricColor:"#d3869b" },
+    { name:"Orange",  accent:"#fe8019", characterColor:"#fabd2f", sceneColor:"#fe8019", transitionColor:"#fb4934", lyricColor:"#8ec07c" },
+    { name:"Purple",  accent:"#d3869b", characterColor:"#b8bb26", sceneColor:"#d3869b", transitionColor:"#fe8019", lyricColor:"#83a598" },
+    { name:"Red",     accent:"#fb4934", characterColor:"#fabd2f", sceneColor:"#fb4934", transitionColor:"#8ec07c", lyricColor:"#d3869b" },
+  ],
+  nord: [
+    { name:"Frost",    accent:"#88c0d0", characterColor:"#81a1c1", sceneColor:"#88c0d0", transitionColor:"#ebcb8b", lyricColor:"#a3be8c" },
+    { name:"Aurora G", accent:"#a3be8c", characterColor:"#8fbcbb", sceneColor:"#a3be8c", transitionColor:"#ebcb8b", lyricColor:"#88c0d0" },
+    { name:"Aurora Y", accent:"#ebcb8b", characterColor:"#88c0d0", sceneColor:"#ebcb8b", transitionColor:"#bf616a", lyricColor:"#a3be8c" },
+    { name:"Aurora R", accent:"#bf616a", characterColor:"#d08770", sceneColor:"#bf616a", transitionColor:"#ebcb8b", lyricColor:"#a3be8c" },
+    { name:"Aurora P", accent:"#b48ead", characterColor:"#88c0d0", sceneColor:"#b48ead", transitionColor:"#ebcb8b", lyricColor:"#a3be8c" },
+  ],
+};
+
+const THEMES = {
+  dark:         { name:"Dark",       icon:"☾",  bg:"#111010", toolbar:"#0e0e0e", border:"#1e1e1e", text:"#ddd5c5", muted:"#555", inputBg:"#181818", inputBorder:"#2a2a2a", statusBg:"#0a0a0a", scrollThumb:"#2a2a2a", defaultAccentIdx:1 },
+  light:        { name:"Light",      icon:"☀",  bg:"#f0ece4", toolbar:"#e8e4dc", border:"#d0cac0", text:"#1a1a1a", muted:"#aaa", inputBg:"#fff",    inputBorder:"#c8c0b0", statusBg:"#e0dcd4", scrollThumb:"#c8c0b0", defaultAccentIdx:0 },
+  catppuccin:   { name:"Catppuccin", icon:"🐱", bg:"#1e1e2e", toolbar:"#181825", border:"#313244", text:"#cdd6f4", muted:"#585b70", inputBg:"#24273a", inputBorder:"#313244", statusBg:"#11111b", scrollThumb:"#313244", defaultAccentIdx:0 },
+  "osaka-jade": { name:"Osaka Jade", icon:"🎋", bg:"#0d1f1a", toolbar:"#0b1a16", border:"#1a3a30", text:"#b4d9c8", muted:"#3a6655", inputBg:"#111f1a", inputBorder:"#1e3d30", statusBg:"#090f0d", scrollThumb:"#1a3a30", defaultAccentIdx:0 },
+  gruvbox:      { name:"Gruvbox",    icon:"🪵", bg:"#282828", toolbar:"#1d2021", border:"#3c3836", text:"#ebdbb2", muted:"#665c54", inputBg:"#32302f", inputBorder:"#504945", statusBg:"#1d2021", scrollThumb:"#504945", defaultAccentIdx:0 },
+  nord:         { name:"Nord",       icon:"❄",  bg:"#2e3440", toolbar:"#242933", border:"#3b4252", text:"#eceff4", muted:"#4c566a", inputBg:"#3b4252", inputBorder:"#434c5e", statusBg:"#1e2430", scrollThumb:"#434c5e", defaultAccentIdx:0 },
+};
+const THEME_ORDER = ["dark","light","catppuccin","osaka-jade","gruvbox","nord"];
+
+function resolveTheme(themeKey, accentIdx) {
+  const base = THEMES[themeKey];
+  const accents = ACCENT_OPTIONS[themeKey];
+  const a = accents?.[accentIdx] ?? accents?.[0];
+  const titleColor = themeKey === "light" ? "#555" : base.muted === "#555" ? "#888" : base.muted;
+  return { ...base, accent:a?.accent??"#888", caretColor:a?.accent??"#888", sceneColor:a?.sceneColor??a?.accent, characterColor:a?.characterColor??base.text, transitionColor:a?.transitionColor??base.muted, lyricColor:a?.lyricColor??base.muted, accentName:a?.name??"", titleColor };
+}
+
+const TITLE_TYPES = ["title","credit","author","draft-date","contact"];
+const BODY_TYPES  = ["action","scene-heading","character","dialogue","parenthetical","transition","centered","lyric"];
+
+const TYPE_META = {
+  "title":          { label:"Title",         short:"TTL", color:"#a78bfa", zone:"title" },
+  "credit":         { label:"Credit",        short:"CRD", color:"#a78bfa", zone:"title" },
+  "author":         { label:"Author",        short:"AUT", color:"#a78bfa", zone:"title" },
+  "draft-date":     { label:"Draft Date",    short:"DAT", color:"#a78bfa", zone:"title" },
+  "contact":        { label:"Contact",       short:"CON", color:"#a78bfa", zone:"title" },
+  "scene-heading":  { label:"Scene Heading", short:"SCN", color:"#3dba7a", zone:"body" },
+  "action":         { label:"Action",        short:"ACT", color:"#888",    zone:"body" },
+  "character":      { label:"Character",     short:"CHR", color:"#8b5cf6", zone:"body" },
+  "dialogue":       { label:"Dialogue",      short:"DLG", color:"#3b82f6", zone:"body" },
+  "parenthetical":  { label:"Parenthetical", short:"( )", color:"#6b7280", zone:"body" },
+  "transition":     { label:"Transition",    short:"TRN", color:"#d97706", zone:"body" },
+  "centered":       { label:"Centered",      short:"CTR", color:"#6b7280", zone:"body" },
+  "lyric":          { label:"Lyric",         short:"LYR", color:"#06b6d4", zone:"body" },
+  "page-break":     { label:"Page Break",    short:"===", color:"#555",    zone:"body" },
+};
+
+const TITLE_FOUNTAIN_KEY = { "title":"Title","credit":"Credit","author":"Author","draft-date":"Draft date","contact":"Contact" };
+const isTitleType = t => TITLE_TYPES.includes(t);
+const isBodyType  = t => !isTitleType(t);
+
+let _uid = 0;
+const uid = () => `b${++_uid}`;
+const makeBlock = (text="", type="action") => ({ id:uid(), text, type, manual:false });
+
+// ─── CARET HELPERS ────────────────────────────────────────────────────────────
+function getCaretOffset(el) {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return 0;
+  const range = sel.getRangeAt(0);
+  const pre = range.cloneRange();
+  pre.selectNodeContents(el);
+  pre.setEnd(range.endContainer, range.endOffset);
+  return pre.toString().length;
+}
+
+function setCaretOffset(el, offset) {
+  if (!el) return;
+  el.focus();
+  const sel = window.getSelection();
+  const range = document.createRange();
+  let charCount = 0, found = false;
+  function walk(node) {
+    if (found) return;
+    if (node.nodeType === Node.TEXT_NODE) {
+      const len = node.textContent.length;
+      if (charCount + len >= offset) {
+        range.setStart(node, offset - charCount);
+        range.collapse(true);
+        found = true;
+      } else { charCount += len; }
+    } else { for (const c of node.childNodes) walk(c); }
+  }
+  walk(el);
+  if (!found) { range.selectNodeContents(el); range.collapse(false); }
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+function setCaretEnd(el) {
+  if (!el) return;
+  el.focus();
+  const sel = window.getSelection();
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  range.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+function getCaretAtBoundary(el) {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return { atStart:false, atEnd:false };
+  const offset = getCaretOffset(el);
+  const len = el.innerText.replace(/\n$/, "").length;
+  return { atStart: offset === 0, atEnd: offset >= len };
+}
+
+// ─── AUTO-DETECT ──────────────────────────────────────────────────────────────
+function detectBodyType(text, prevBlock, currentType) {
+  const t = text.trim();
+  if (t.startsWith("!")) return "action";
+  if (t.startsWith("~")) return "lyric";
+  if (/^={3,}$/.test(t)) return "page-break";
+  if (/^>[^<\n]+<$/.test(t)) return "centered";
+  if (t.startsWith(">")) return "transition";
+  if (/^(INT|EXT|EST|INT\.\/EXT|INT\/EXT|I\/E)[\. ]/i.test(t)) return "scene-heading";
+  if (/^\.\w/.test(t)) return "scene-heading";
+  if (/^[A-Z][A-Z ]*TO:$/.test(t) || /^(fade (in|out|to black)|smash cut|match cut):$/i.test(t)) return "transition";
+  const prev = prevBlock?.type;
+  if (prev === "character" || prev === "parenthetical") {
+    if (!t) return "dialogue";
+    if (/^\(.*\)$/.test(t)) return "parenthetical";
+    return "dialogue";
+  }
+  if (currentType === "dialogue") {
+    if (/^\(.*\)$/.test(t)) return "parenthetical";
+    return "dialogue";
+  }
+  return "action";
+}
+
+function scoredBodySuggestions(text, prevBlock, currentType) {
+  const detected = detectBodyType(text, prevBlock, currentType);
+  const scores = {};
+  BODY_TYPES.forEach(type => {
+    let s = 0;
+    if (type === detected) s = 100;
+    else if (type === "action") s = 20;
+    else if (type === "dialogue" && (prevBlock?.type === "character" || prevBlock?.type === "parenthetical")) s = 80;
+    else if (type === "scene-heading" && text.trim().length > 2) s = 15;
+    else s = 5;
+    scores[type] = s;
+  });
+  return Object.entries(scores).sort((a,b) => b[1]-a[1]).slice(0,3).map(([t]) => t);
+}
+
+function cycleInGroup(current, group) {
+  const i = group.indexOf(current);
+  return group[i === -1 ? 0 : (i+1) % group.length];
+}
+
+// ─── FOUNTAIN EXPORT ──────────────────────────────────────────────────────────
+function fmtSceneNum(n, fmt) {
+  switch(fmt) {
+    case"01":  return String(n).padStart(2,"0");
+    case"001": return String(n).padStart(3,"0");
+    case"101": return String(100+n);
+    case"A1":  return "A"+n;
+    default:   return String(n);
+  }
+}
+
+function blocksToFountain(blocks, showNums, numFmt, sceneNumMap) {
+  const parts = [];
+  const titleBlocks = blocks.filter(b => isTitleType(b.type));
+  if (titleBlocks.length) {
+    titleBlocks.forEach(b => {
+      const key = TITLE_FOUNTAIN_KEY[b.type] || b.type;
+      parts.push(`${key}: ${b.text}`);
+    });
+    parts.push("");
+  }
+  const dialogueTypes = new Set(["dialogue","parenthetical"]);
+  const bodyBlocks = blocks.filter(b => isBodyType(b.type));
+  bodyBlocks.forEach((b, bi) => {
+    const origIdx = blocks.indexOf(b);
+    const num = showNums && sceneNumMap[origIdx] != null ? ` #${fmtSceneNum(sceneNumMap[origIdx], numFmt)}#` : "";
+    const nextBlock = bodyBlocks[bi + 1];
+    switch(b.type) {
+      case "scene-heading": parts.push(`\n${b.text.toUpperCase()}${num}\n`); break;
+      case "character":     parts.push(`\n${b.text.toUpperCase()}`); break;
+      case "dialogue": {
+        parts.push(b.text);
+        if (!nextBlock || !dialogueTypes.has(nextBlock.type)) parts.push("");
+        break;
+      }
+      case "parenthetical": {
+        parts.push(b.text.startsWith("(") ? b.text : `(${b.text})`);
+        if (!nextBlock || !dialogueTypes.has(nextBlock.type)) parts.push("");
+        break;
+      }
+      case "transition":    parts.push(`\n${b.text.toUpperCase()}\n`); break;
+      case "centered":      parts.push(`>${b.text}<`); break;
+      case "lyric":         parts.push(`~${b.text}`); break;
+      case "page-break":    parts.push("==="); break;
+      default:              parts.push(b.text);
+    }
+  });
+  return parts.join("\n");
+}
+
+// ─── FOUNTAIN PARSER ──────────────────────────────────────────────────────────
+function isFountainTitleKey(line) {
+  return /^(Title|Credit|Author|Draft date|Source|Notes|Copyright|Contact|Revision|Date|Draft)\s*:/i.test(line.trim());
+}
+function fountainKeyToBlockType(key) {
+  const k = key.trim().toLowerCase().replace(/\s+/g,"");
+  if (k==="title") return "title";
+  if (k==="credit") return "credit";
+  if (k==="author") return "author";
+  if (k==="date"||k==="draftdate") return "draft-date";
+  if (k==="contact") return "contact";
+  return null;
+}
+function parseFountain(text) {
+  const lines = text.split(/\r?\n/);
+  const blocks = [];
+  let i = 0, foundTitleKey = false;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (isFountainTitleKey(line)) {
+      foundTitleKey = true;
+      const m = line.match(/^([^:]+):\s*(.*)$/);
+      if (m) {
+        const blockType = fountainKeyToBlockType(m[1]) || "title";
+        let fullVal = m[2].trim(); i++;
+        while (i < lines.length && /^\s+\S/.test(lines[i])) { fullVal += " " + lines[i].trim(); i++; }
+        blocks.push(makeBlock(fullVal, blockType));
+      } else i++;
+    } else if (line.trim() === "" && foundTitleKey) { i++; break; }
+    else if (line.trim() === "" && !foundTitleKey) i++;
+    else break;
+  }
+  while (i < lines.length) {
+    const raw = lines[i]; const t = raw.trim();
+    if (t === "") { i++; continue; }
+    if (/^={3,}$/.test(t))                                        { blocks.push(makeBlock(t,"page-break")); i++; continue; }
+    if (/^\.\w/.test(t))                                          { blocks.push(makeBlock(t.slice(1).toUpperCase(),"scene-heading")); i++; continue; }
+    if (/^(INT|EXT|EST|INT\.\/EXT|INT\/EXT|I\/E)[\. ]/i.test(t)) { blocks.push(makeBlock(t.replace(/ #[^#]+#\s*$/,"").trim(),"scene-heading")); i++; continue; }
+    if (t.startsWith(">") && !t.endsWith("<"))                    { blocks.push(makeBlock(t.slice(1).trim(),"transition")); i++; continue; }
+    if (/^[A-Z][A-Z ]*TO:$/.test(t) || /^(fade (in|out|to black)|smash cut|match cut):$/i.test(t)) { blocks.push(makeBlock(t,"transition")); i++; continue; }
+    if (/^>[^<\n]+<$/.test(t))                                   { blocks.push(makeBlock(t.slice(1,-1).trim(),"centered")); i++; continue; }
+    if (t.startsWith("~"))                                        { blocks.push(makeBlock(t.slice(1).trim(),"lyric")); i++; continue; }
+    if (t.startsWith("!"))                                        { blocks.push(makeBlock(t.slice(1),"action")); i++; continue; }
+    if (t.startsWith("@"))                                        { blocks.push(makeBlock(t.slice(1).trim(),"character")); i++; continue; }
+    if (/^[A-Z][A-Z0-9 _\-'\.]*(\s*\([^)]+\))?$/.test(t) && !/[a-z]/.test(t) && i+1 < lines.length && lines[i+1].trim() !== "") {
+      blocks.push(makeBlock(t,"character")); i++;
+      while (i < lines.length) {
+        const dl = lines[i].trim();
+        if (dl === "") { i++; break; }
+        if (/^(INT|EXT|EST|INT\.\/EXT|INT\/EXT|I\/E)[\. ]/i.test(dl)) break;
+        if (/^={3,}$/.test(dl)) break;
+        if (/^\.\w/.test(dl)) break;
+        if (/^[A-Z][A-Z ]*TO:$/.test(dl) || /^(fade (in|out|to black)|smash cut|match cut):$/i.test(dl)) break;
+        if (/^>[^<\n]+<$/.test(dl)) break;
+        if (dl.startsWith("~")) break;
+        if (dl.startsWith("!")) break;
+        if (dl.startsWith("@")) break;
+        if (dl.startsWith(">") && !dl.endsWith("<")) break;
+        if (/^\(.*\)$/.test(dl)) blocks.push(makeBlock(dl,"parenthetical"));
+        else blocks.push(makeBlock(dl,"dialogue"));
+        i++;
+      }
+      continue;
+    }
+    const actionLines = [t]; i++;
+    while (i < lines.length && lines[i].trim() !== "") { actionLines.push(lines[i].trim()); i++; }
+    blocks.push(makeBlock(actionLines.join("\n"),"action"));
+  }
+  return { blocks: blocks.length ? blocks : [makeBlock("","action")] };
+}
+
+// ─── DOWNLOAD ─────────────────────────────────────────────────────────────────
+function downloadText(content, filename) {
+  const blob = new Blob([content], {type:"text/plain;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.style.display = "none";
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 2000);
+}
+
+// ─── PRINT HTML ───────────────────────────────────────────────────────────────
+function buildPrintHtml(blocks, wm, wmOpacity, showNums, numFmt, sceneNumMap, titleStyle) {
+  const css = `
+    @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
+    @page{size:letter;margin:1in 1in 1in 1.5in;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Courier Prime','Courier New',Courier,monospace;font-size:12pt;line-height:1.0;color:#000;background:#fff;}
+    .el{position:relative;}
+    .scene-heading{font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin-top:12pt;margin-bottom:6pt;}
+    .scene-heading:first-child{margin-top:0;margin-bottom:6pt;}
+    .el:first-child{margin-top:0 !important;}
+    .action{margin-top:12pt;}
+    .character{text-transform:uppercase;font-weight:700;margin-top:12pt;margin-left:2.2in;}
+    .dialogue{margin-left:1.0in;margin-right:1.5in;}
+    .parenthetical{margin-left:1.6in;margin-right:2.0in;font-style:italic;}
+    .transition{text-align:right;text-transform:uppercase;font-weight:700;margin-top:12pt;margin-bottom:12pt;}
+    .centered{text-align:center;margin-top:12pt;}
+    .lyric{font-style:italic;margin-left:0.5in;margin-top:6pt;}
+    .page-break{page-break-after:always;}
+    .title-page{page-break-after:always;position:relative;min-height:9in;}
+    .title-block{position:absolute;top:3.5in;left:0;right:0;text-align:center;}
+    .title-block span{font-size:12pt;line-height:2;display:block;}
+    .bottom-block{position:absolute;bottom:0.5in;left:0;font-size:12pt;line-height:1.8;}
+    .scene-num-left{position:absolute;left:-1.0in;top:0;}
+    .scene-num-right{position:absolute;right:-0.75in;top:0;}
+    .watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:72pt;font-family:Helvetica,sans-serif;font-weight:bold;white-space:nowrap;pointer-events:none;z-index:999;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+  `;
+  const titleBlocks = blocks.filter(b => isTitleType(b.type));
+  const centreTypes = ["title","credit","author"];
+  const centreBlocks = titleBlocks.filter(b => centreTypes.includes(b.type));
+  const bottomTypes = ["draft-date","contact"];
+  const bottomBlocks = titleBlocks.filter(b => bottomTypes.includes(b.type));
+  function renderTitleSpan(b) {
+    let txt = b.text || "";
+    if (b.type === "title") {
+      if (titleStyle?.bold && titleStyle?.underline) txt = `<strong><u>${txt}</u></strong>`;
+      else if (titleStyle?.bold) txt = `<strong>${txt}</strong>`;
+      else if (titleStyle?.underline) txt = `<u>${txt}</u>`;
+    }
+    return `<span>${txt}</span>`;
+  }
+  const centreHtml = centreBlocks.map(renderTitleSpan).join("");
+  const bottomHtml = bottomBlocks.map(b => `<div>${b.text||""}</div>`).join("");
+  const hasTitlePage = titleBlocks.length > 0;
+  const titlePageHtml = hasTitlePage
+    ? `<div class="title-page"><div class="title-block">${centreHtml}</div><div class="bottom-block">${bottomHtml}</div></div>`
+    : "";
+  const bodyBlocks = blocks.filter(b => isBodyType(b.type));
+  let firstNonEmpty = 0;
+  while (firstNonEmpty < bodyBlocks.length && bodyBlocks[firstNonEmpty].text.trim() === "") firstNonEmpty++;
+  const trimmedBody = bodyBlocks.slice(firstNonEmpty);
+  const bodyHtml = trimmedBody.map((b, bi) => {
+    const origIdx = blocks.indexOf(b);
+    if (b.type === "page-break") return `<div class="el page-break"></div>`;
+    const cls = b.type.replace(/[^a-z-]/g,"");
+    const sn = showNums && sceneNumMap[origIdx] != null ? fmtSceneNum(sceneNumMap[origIdx], numFmt) : null;
+    const numHtml = (b.type === "scene-heading" && sn) ? `<span class="scene-num-left">${sn}</span><span class="scene-num-right">${sn}</span>` : "";
+    return `<div class="el ${cls}" style="${bi===0?'margin-top:0;':''}">${numHtml}${b.text||"&nbsp;"}</div>`;
+  }).join("\n");
+  const wmHtml = wm ? `<div class="watermark" style="color:rgba(0,0,0,${wmOpacity/100})">${wm}</div>` : "";
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Screenplay</title><style>${css}</style></head><body>${wmHtml}\n${titlePageHtml}\n${bodyHtml}\n</body></html>`;
+}
+
+// ─── BLOCK STYLE ──────────────────────────────────────────────────────────────
+function blockStyle(type, T, isMobile) {
+  const base = {
+    fontFamily:"'Courier Prime','Courier New',Courier,monospace",
+    fontSize: isMobile ? "14px" : "12pt", lineHeight:"1.667",
+    color: T.text, caretColor: T.caretColor,
+    display:"block", width:"100%",
+    padding:"0", margin:"0", boxSizing:"border-box",
+  };
+  const m = (d,mb) => isMobile ? mb : d;
+  switch(type) {
+    case "title":         return {...base, fontWeight:"700", fontSize:isMobile?"15px":"13pt", color:T.titleColor};
+    case "credit":        return {...base, fontStyle:"italic", color:T.titleColor, opacity:.85};
+    case "author":        return {...base, color:T.titleColor};
+    case "draft-date":    return {...base, fontSize:isMobile?"12px":"10.5pt", color:T.titleColor, opacity:.7};
+    case "contact":       return {...base, fontSize:isMobile?"12px":"10.5pt", color:T.titleColor, opacity:.7};
+    case "scene-heading": return {...base, fontWeight:"700", textTransform:"uppercase", letterSpacing:".04em", color:T.sceneColor||T.accent, marginTop:m("0.5em","0.3em")};
+    case "character":     return {...base, textTransform:"uppercase", fontWeight:"600", paddingLeft:m("clamp(160px,33%,260px)","0"), marginTop:m("0.5em","0.3em"), color:T.characterColor||T.text};
+    case "dialogue":      return {...base, paddingLeft:m("clamp(80px,13%,110px)","0"), paddingRight:m("clamp(160px,26%,220px)","0")};
+    case "parenthetical": return {...base, paddingLeft:m("clamp(120px,20%,170px)","0"), paddingRight:m("clamp(160px,26%,220px)","0"), fontStyle:"italic", color:T.muted};
+    case "transition":    return {...base, textAlign:"right", textTransform:"uppercase", fontWeight:"700", marginTop:m("0.5em","0.3em"), color:T.transitionColor||T.muted};
+    case "centered":      return {...base, textAlign:"center"};
+    case "lyric":         return {...base, fontStyle:"italic", paddingLeft:m("clamp(30px,12%,80px)","0"), color:T.lyricColor||T.muted};
+    default:              return base;
+  }
+}
+
+// ─── SAMPLE ───────────────────────────────────────────────────────────────────
+function makeSample() {
+  const today = new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
+  return [
+    makeBlock("Your Title Here","title"),
+    makeBlock("Written by","credit"),
+    makeBlock("Your Name","author"),
+    makeBlock(today,"draft-date"),
+    makeBlock("you@example.com","contact"),
+    makeBlock("EXT. SCENE LOCATION - DAY","scene-heading"),
+    makeBlock(`Your action here. Press TAB to cycle block types, or CTRL+SHIFT+[first letter] — e.g. CTRL+SHIFT+C for Character, CTRL+SHIFT+D for Dialogue, CTRL+SHIFT+S for Scene Heading. The [# Scenes] button reveals scene numbers. Modify your title page, set UI themes, open, save, and export to PDF are all in the top right. When printing or exporting to PDF, set custom margins in the print dialogue: 1" top, 1" right, 1" bottom, and 1.5" left.`,"action"),
+    makeBlock("CHARACTER","character"),
+    makeBlock("(parenthetical)","parenthetical"),
+    makeBlock("Place dialogue here.","dialogue"),
+    makeBlock("CHARACTER (V.O.)","character"),
+    makeBlock("Use V.O. or O.S. in your character block to indicate Voice Over or Off Screen.","dialogue"),
+    makeBlock("EXT. MOJAVE DESERT - DAY","scene-heading"),
+    makeBlock("The sun bleeds red across cracked earth as the sun sets on the prairie house. A JEEP pulls up to its front porch.","action"),
+    makeBlock("INT. PRAIRIE HOUSE - NIGHT","scene-heading"),
+    makeBlock("MIRA SOLANO (30s, sunburned) steps through the door.","action"),
+    makeBlock("MIRA","character"),
+    makeBlock("(looking around cautiously)","parenthetical"),
+    makeBlock("Frank? Are you there?","dialogue"),
+    makeBlock("SILENCE. The floorboards creak as she steps forward, pulling out her flashlight. A radio suddenly CRACKLES. Mira jumps back with an EEAK.","action"),
+    makeBlock("FRANK","character"),
+    makeBlock("Mira? What are you doin--","dialogue"),
+    makeBlock("FRANK (30s, rough and dirty) appears behind her. Mira screams, still on edge from the radio, and punches him in the face.","action"),
+    makeBlock("MIRA","character"),
+    makeBlock("Frank why'd you have all the lights turned off!?","dialogue"),
+    makeBlock("FRANK","character"),
+    makeBlock("Ahhh! Mira! What was that for?","dialogue"),
+    makeBlock("MIRA","character"),
+    makeBlock("You scared the living daylights out of me!","dialogue"),
+    makeBlock("FRANK","character"),
+    makeBlock("(long sigh)","parenthetical"),
+    makeBlock("Well, if we're done here, I have something to show you.","dialogue"),
+    makeBlock("CUT TO:","transition"),
+    makeBlock("INT. BASEMENT - CONTINUOUS","scene-heading"),
+    makeBlock("Frank and Mira stand at the foot of a workbench. Mira stares in awe at a glowing crystal floating above a copper contraption.","action"),
+    makeBlock("FRANK","character"),
+    makeBlock("This is why the lights are all off.","dialogue"),
+    makeBlock("MIRA","character"),
+    makeBlock("How is it doing that — is it magnetic?","dialogue"),
+  ];
+}
+
+// ─── SCENE NAV ────────────────────────────────────────────────────────────────
+function SceneNav({scenes, focusedIdx, showNums, numFmt, T, onSelect, onClose, onReorder, mobile, currentFilename}) {
+  const currentScene = [...scenes].reverse().find(s => s.blockIndex <= focusedIdx);
+  const [dragIdx, setDragIdx] = useState(null);
+  const [overIdx, setOverIdx] = useState(null);
+  const draggingRef = useRef(false);
+
+  function handlePointerDown(e,i) { e.currentTarget.setPointerCapture(e.pointerId); draggingRef.current=false; setDragIdx(i); setOverIdx(i); }
+  function handlePointerMove(e) {
+    if (dragIdx===null) return; draggingRef.current=true;
+    const list = e.currentTarget.closest("[data-scenelist]"); if (!list) return;
+    const items = [...list.querySelectorAll("[data-sceneidx]")];
+    const y = e.clientY; let closest=dragIdx, closestDist=Infinity;
+    items.forEach(el => { const rect=el.getBoundingClientRect(); const mid=rect.top+rect.height/2; const dist=Math.abs(y-mid); if(dist<closestDist){closestDist=dist;closest=Number(el.dataset.sceneidx);} });
+    setOverIdx(closest);
+  }
+  function handlePointerUp(e,i) {
+    if (dragIdx!==null && overIdx!==null && overIdx!==dragIdx && draggingRef.current) onReorder(dragIdx,overIdx);
+    else if (!draggingRef.current) { onSelect(scenes[dragIdx].blockIndex); if(mobile) onClose(); }
+    setDragIdx(null); setOverIdx(null); draggingRef.current=false;
+  }
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",height:"100%",background:T.toolbar,borderRight:mobile?"none":`1px solid ${T.border}`}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 12px 8px",borderBottom:`1px solid ${T.border}`,flexShrink:0}}>
+        <span style={{fontSize:"8.5px",letterSpacing:".14em",textTransform:"uppercase",color:T.muted}}>Scenes ({scenes.length})</span>
+        {mobile && <button onPointerDown={onClose} style={{background:"transparent",border:"none",color:T.muted,fontSize:"18px",cursor:"pointer",lineHeight:1,padding:"0 4px"}}>×</button>}
+      </div>
+      {currentFilename && (
+        <div style={{padding:"7px 12px 6px",borderBottom:`1px solid ${T.border}`,flexShrink:0,overflow:"hidden"}}>
+          <span style={{fontSize:"11px",fontWeight:"700",fontFamily:"'Courier Prime',monospace",color:T.accent,display:"block",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{currentFilename}</span>
+        </div>
+      )}
+      <div data-scenelist="1" style={{flex:1,overflowY:"auto",padding:"6px 0",userSelect:"none"}} onPointerMove={handlePointerMove}>
+        {scenes.length===0 && <div style={{padding:"14px 12px",fontSize:"10px",color:T.muted,fontStyle:"italic"}}>No scenes yet.</div>}
+        {scenes.map((s,i) => {
+          const isActive = s===currentScene, isDragging=dragIdx===i, isOver=overIdx===i&&dragIdx!==null&&dragIdx!==i;
+          return (
+            <div key={i} data-sceneidx={i} onPointerDown={e=>handlePointerDown(e,i)} onPointerUp={e=>handlePointerUp(e,i)}
+              style={{padding:"6px 12px",cursor:dragIdx!==null?"grabbing":"grab",background:isDragging?T.accent+"28":isActive?T.accent+"18":"transparent",borderLeft:`2px solid ${isOver?T.accent:isActive?T.accent:"transparent"}`,borderTop:isOver&&overIdx<dragIdx?`2px solid ${T.accent}`:"2px solid transparent",borderBottom:isOver&&overIdx>dragIdx?`2px solid ${T.accent}`:"2px solid transparent",display:"flex",gap:"7px",alignItems:"flex-start",opacity:isDragging?0.45:1,transition:"opacity .1s,background .12s",touchAction:"none"}}>
+              <span style={{fontSize:"10px",color:T.muted,opacity:.5,paddingTop:"1px",flexShrink:0}}>⠿</span>
+              {showNums && <span style={{fontSize:"8px",color:T.accent,opacity:.7,minWidth:"18px",paddingTop:"2px",fontFamily:"'Courier Prime',monospace"}}>{fmtSceneNum(s.num,numFmt)}</span>}
+              <span style={{fontSize:"9.5px",color:isActive?T.accent:T.muted,lineHeight:"1.4",fontFamily:"'Courier Prime',monospace",wordBreak:"break-word",fontWeight:isActive?"700":"400"}}>{(s.text||"—").toUpperCase()}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── FORMAT BAR ───────────────────────────────────────────────────────────────
+function FormatBar({currentType, onSelect, T, mobile}) {
+  const zone = isTitleType(currentType) ? "title" : "body";
+  const types = zone==="title" ? TITLE_TYPES : BODY_TYPES;
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:"3px",padding:mobile?"6px 8px":"4px 8px",background:T.toolbar,borderTop:`1px solid ${T.border}`,overflowX:"auto",flexShrink:0,WebkitOverflowScrolling:"touch",scrollbarWidth:"none"}}>
+      <div style={{fontSize:"7.5px",fontFamily:"'IBM Plex Mono',monospace",letterSpacing:".1em",textTransform:"uppercase",color:zone==="title"?TYPE_META["title"].color:T.accent,border:`1px solid ${zone==="title"?TYPE_META["title"].color+"55":T.accent+"44"}`,borderRadius:"4px",padding:"2px 7px",flexShrink:0,marginRight:"4px",opacity:.8}}>
+        {zone==="title" ? "title page" : "screenplay"}
+      </div>
+      {types.map(t => {
+        const meta = TYPE_META[t], active = currentType===t;
+        return (
+          <button key={t} onPointerDown={e=>{e.preventDefault();onSelect(t);}}
+            style={{flexShrink:0,background:active?meta.color:T.inputBg,color:active?"#fff":T.muted,border:`1px solid ${active?meta.color:T.border}`,borderRadius:"5px",padding:mobile?"7px 10px":"4px 8px",fontSize:mobile?"11px":"9.5px",fontFamily:"'IBM Plex Mono',monospace",fontWeight:active?"700":"400",letterSpacing:".06em",cursor:"pointer",transition:"all .12s",minHeight:mobile?"36px":"26px",minWidth:mobile?"44px":"auto",textTransform:"uppercase"}}>
+            {mobile ? meta.short : meta.label.split(" ")[0]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── TITLE ZONE SEPARATOR ─────────────────────────────────────────────────────
+function TitleZoneSeparator({T}) {
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:"10px",margin:"1.2rem 0 1rem",userSelect:"none"}}>
+      <div style={{flex:1,height:"1px",background:T.border}}/>
+      <span style={{fontSize:"7.5px",fontFamily:"'IBM Plex Mono',monospace",letterSpacing:".14em",textTransform:"uppercase",color:T.muted,opacity:.6}}>screenplay</span>
+      <div style={{flex:1,height:"1px",background:T.border}}/>
+    </div>
+  );
+}
+
+// ─── BLOCK ────────────────────────────────────────────────────────────────────
+function Block({block, index, focused, sceneNum, showNums, numFmt, T, mobile, onInput, onFocus, onKeyDown, divRef}) {
+  const style = blockStyle(block.type, T, mobile);
+  const meta  = TYPE_META[block.type] || TYPE_META["action"];
+  const isTitleZone = isTitleType(block.type);
+  const lastWritten = useRef(null);
+  const elRef = useRef(null);
+
+  useEffect(() => {
+    const el = elRef.current; if (!el) return;
+    const domText = el.innerText.replace(/\n$/, "");
+    if (domText !== block.text && block.text !== lastWritten.current) {
+      const offset = document.activeElement === el ? getCaretOffset(el) : null;
+      el.innerText = block.text;
+      lastWritten.current = block.text;
+      if (offset !== null) setCaretOffset(el, Math.min(offset, block.text.length));
+    }
+  }, [block.text, block.type]);
+
+  const setRef = useCallback(el => {
+    elRef.current = el;
+    if (typeof divRef === "function") divRef(el);
+    if (el && el.innerText.replace(/\n$/,"") !== block.text) {
+      el.innerText = block.text;
+      lastWritten.current = block.text;
+    }
+  }, [block.id]);
+
+  return (
+    <div style={{position:"relative",borderLeft:`2px solid ${focused?meta.color:isTitleZone?meta.color+"28":"transparent"}`,paddingLeft:mobile?"8px":(focused?"10px":"12px"),transition:"border-color .15s",marginBottom:isTitleZone?"0.15rem":"1px"}}>
+      {focused && !mobile && (
+        <div style={{position:"absolute",left:"-118px",top:"2px",width:"106px",textAlign:"right",fontSize:"8px",fontFamily:"'IBM Plex Mono',monospace",letterSpacing:".1em",textTransform:"uppercase",color:meta.color,background:meta.color+"25",border:`1px solid ${meta.color}44`,padding:"2px 6px",borderRadius:"3px",pointerEvents:"none",whiteSpace:"nowrap"}}>
+          {meta.label}
+        </div>
+      )}
+      {block.type==="scene-heading" && showNums && sceneNum && (
+        <div style={{position:"absolute",right:mobile?"-2px":"-64px",top:mobile?"-14px":"3px",fontSize:"8px",fontFamily:"'Courier Prime',monospace",color:T.accent,opacity:.75,whiteSpace:"nowrap",letterSpacing:".05em"}}>
+          #{fmtSceneNum(sceneNum,numFmt)}#
+        </div>
+      )}
+      <div
+        ref={setRef}
+        contentEditable
+        suppressContentEditableWarning
+        spellCheck={!isTitleZone}
+        data-placeholder={focused ? (isTitleZone ? meta.label : "") : ""}
+        onFocus={() => onFocus(index)}
+        onInput={e => {
+          const text = e.currentTarget.innerText.replace(/\n$/,"");
+          lastWritten.current = text;
+          onInput(index, text);
+        }}
+        onKeyDown={e => onKeyDown(e, index)}
+        onPaste={e => {
+          e.preventDefault();
+          const text = e.clipboardData.getData("text/plain");
+          document.execCommand("insertText", false, text);
+        }}
+        style={{...style, outline:"none", border:"none", background:"transparent"}}
+      />
+    </div>
+  );
+}
+
+// ─── CONFIRM DIALOG ───────────────────────────────────────────────────────────
+function ConfirmDialog({T, title, body, primaryLabel, primaryBusy, onPrimary, secondaryLabel, onSecondary, onCancel}) {
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:3000,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)"}}>
+      <div style={{background:T.toolbar,border:`1px solid ${T.border}`,borderRadius:"12px",padding:"26px 26px 20px",width:"min(340px,92vw)",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}>
+        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:"10px",fontWeight:"700",letterSpacing:".14em",textTransform:"uppercase",color:T.accent,marginBottom:"8px"}}>{title}</div>
+        <div style={{fontFamily:"'Courier Prime',monospace",fontSize:"11px",color:T.muted,lineHeight:"1.6",marginBottom:"22px"}}>{body}</div>
+        <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+          <button onClick={onPrimary} disabled={!!primaryBusy} style={{background:T.accent,color:"#fff",border:"none",borderRadius:"6px",padding:"10px 16px",cursor:"pointer",fontSize:"9.5px",fontFamily:"'IBM Plex Mono',monospace",fontWeight:"700",letterSpacing:".08em",textTransform:"uppercase",opacity:primaryBusy?.6:1}}>{primaryBusy?"Saving…":primaryLabel}</button>
+          <button onClick={onSecondary} style={{background:"transparent",color:T.muted,border:`1px solid ${T.border}`,borderRadius:"6px",padding:"10px 16px",cursor:"pointer",fontSize:"9.5px",fontFamily:"'IBM Plex Mono',monospace",fontWeight:"700",letterSpacing:".08em",textTransform:"uppercase"}}>{secondaryLabel}</button>
+          <button onClick={onCancel} style={{background:"transparent",border:"none",color:T.muted,fontSize:"9px",fontFamily:"'IBM Plex Mono',monospace",letterSpacing:".06em",cursor:"pointer",padding:"4px",textAlign:"center",opacity:.7}}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── START DIALOG ─────────────────────────────────────────────────────────────
+function StartDialog({T, onConfirm, onSkip, onOpen, onTour, restoreInfo, onRestore}) {
+  const restoreDate = restoreInfo ? new Date(restoreInfo.timestamp).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}) : null;
+  const btnBase = {width:"100%",borderRadius:"6px",padding:"10px 16px",cursor:"pointer",fontSize:"9.5px",fontFamily:"'IBM Plex Mono',monospace",fontWeight:"700",letterSpacing:".08em",textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:"7px",transition:"all .15s"};
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:3000,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.75)",backdropFilter:"blur(4px)"}}>
+      <div style={{background:T.toolbar,border:`1px solid ${T.border}`,borderRadius:"12px",padding:"28px 28px 22px",width:"min(360px,94vw)",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"6px"}}>
+          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:"11px",fontWeight:"700",letterSpacing:".16em",textTransform:"uppercase",color:T.accent}}>Bamboo Fountain</div>
+          <button onPointerDown={onSkip} style={{background:"transparent",border:"none",color:T.muted,fontSize:"18px",cursor:"pointer",lineHeight:1,padding:"0 2px"}}>×</button>
+        </div>
+        <div style={{fontSize:"11px",color:T.muted,fontFamily:"'Courier Prime',monospace",lineHeight:"1.5",marginBottom:"22px"}}>Start a new screenplay, take a tour, or open an existing script.</div>
+        <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+          <button onClick={onConfirm} style={{...btnBase,background:T.accent,color:"#fff",border:"none"}}>✦ New Screenplay</button>
+          <button onClick={onTour} style={{...btnBase,background:"transparent",color:T.text,border:`1px solid ${T.border}`}}>🎬 Take Tour</button>
+          <button onClick={onOpen} style={{...btnBase,background:T.accent+"18",color:T.accent,border:`1px solid ${T.accent+"55"}`}}>📂 Open .fountain</button>
+        </div>
+        {restoreInfo && (
+          <div style={{background:T.accent+"18",border:`1px solid ${T.accent+"44"}`,borderRadius:"8px",padding:"10px 14px",marginTop:"14px",display:"flex",alignItems:"center",gap:"10px"}}>
+            <span style={{fontSize:"15px"}}>💾</span>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:"8.5px",fontWeight:"700",letterSpacing:".1em",textTransform:"uppercase",color:T.accent,marginBottom:"3px"}}>Recover last autosave</div>
+              <div style={{fontFamily:"'Courier Prime',monospace",fontSize:"10px",color:T.muted}}>{restoreInfo.title?<><span style={{color:T.text}}>{restoreInfo.title}</span> · </>:""}{restoreDate}</div>
+            </div>
+            <button onClick={onRestore} style={{background:T.accent,color:"#fff",border:"none",borderRadius:"6px",padding:"6px 14px",cursor:"pointer",fontSize:"9px",fontFamily:"'IBM Plex Mono',monospace",fontWeight:"700",letterSpacing:".08em",textTransform:"uppercase",flexShrink:0}}>Restore</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── PRINT MODAL ──────────────────────────────────────────────────────────────
+function PrintModal({html, wm, wmOpacity, onWmChange, onOpacityChange, onClose, onPrint, T}) {
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",flexDirection:"column",background:"rgba(0,0,0,0.85)"}}>
+      <div style={{background:T.toolbar,borderBottom:`1px solid ${T.border}`,flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:"10px",padding:"8px 16px"}}>
+          <span style={{fontSize:"10px",fontFamily:"'IBM Plex Mono',monospace",color:T.text,letterSpacing:".1em",textTransform:"uppercase",flexShrink:0}}>Print Preview</span>
+          <div style={{flex:1}}/>
+          <span style={{fontSize:"9px",color:T.muted,flexShrink:0}}>Watermark</span>
+          <input value={wm} onChange={e=>onWmChange(e.target.value)} placeholder="e.g. DRAFT" style={{background:T.inputBg,color:T.text,border:`1px solid ${T.inputBorder}`,borderRadius:"4px",padding:"4px 8px",fontSize:"9px",fontFamily:"'IBM Plex Mono',monospace",width:"100px",flexShrink:0}}/>
+          {wm && <><span style={{fontSize:"9px",color:T.muted,flexShrink:0}}>{wmOpacity}%</span><input type="range" min="5" max="60" value={wmOpacity} onChange={e=>onOpacityChange(+e.target.value)} style={{width:"70px",flexShrink:0}}/></>}
+          <button onClick={onPrint} style={{background:"#3dba7a",color:"#fff",border:"none",borderRadius:"5px",padding:"6px 14px",cursor:"pointer",fontSize:"10px",fontFamily:"'IBM Plex Mono',monospace",fontWeight:"700",letterSpacing:".06em",flexShrink:0}}>⎙ Print / Save PDF</button>
+          <button onClick={onClose} style={{background:"transparent",border:`1px solid ${T.border}`,color:T.muted,borderRadius:"5px",padding:"6px 10px",cursor:"pointer",fontSize:"13px",lineHeight:1,flexShrink:0}}>×</button>
+        </div>
+        <div style={{borderTop:`1px solid ${T.border}`,padding:"6px 16px",textAlign:"center"}}>
+          <span style={{fontSize:"9px",fontFamily:"'IBM Plex Mono',monospace",color:T.accent,letterSpacing:".04em"}}>When printing or exporting to PDF, set custom margins in the print dialogue: 1" top, 1" right, 1" bottom, and 1.5" left</span>
+        </div>
+      </div>
+      <div style={{flex:1,overflow:"auto",display:"flex",justifyContent:"center",padding:"20px",background:"#1a1a1a"}}>
+        <iframe srcDoc={html} style={{width:"8.5in",maxWidth:"100%",height:"11in",background:"#fff",border:"none",boxShadow:"0 4px 32px rgba(0,0,0,0.6)",flexShrink:0}} title="Print Preview"/>
+      </div>
+    </div>
+  );
+}
+
+// ─── MAIN ─────────────────────────────────────────────────────────────────────
+function BambooFountain() {
+  const [blocks, setBlocks]             = useState(() => [makeBlock("","action")]);
+  const [focusedIdx, setFocusedIdx]     = useState(0);
+  const [themeKey, setThemeKey]         = useState(() => window.__BF_INITIAL_THEME__ || "dark");
+  const [accentIdx, setAccentIdx]       = useState(() => THEMES[window.__BF_INITIAL_THEME__]?.defaultAccentIdx ?? 1);
+  const [showNums, setShowNums]         = useState(true);
+  const [numFmt, setNumFmt]             = useState("1");
+  const [sidebarOpen, setSidebarOpen]   = useState(false);
+  const [mobile, setMobile]             = useState(false);
+  const [suggestions, setSuggestions]   = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showThemePicker, setShowThemePicker] = useState(false);
+  const [printOpen, setPrintOpen]       = useState(false);
+  const [printHtml, setPrintHtml]       = useState("");
+  const [watermark, setWatermark]       = useState("");
+  const [wmOpacity, setWmOpacity]       = useState(15);
+  const [showStartDialog, setShowStartDialog] = useState(true);
+  const [titleStyle]                    = useState({bold:false, underline:false});
+  const [isAutoTheme, setIsAutoTheme]   = useState(() => !localStorage.getItem("bf_theme"));
+  const [showToast, setShowToast]       = useState(false);
+  const [toastSaving, setToastSaving]   = useState(false);
+  const [showSavedToast, setShowSavedToast] = useState(false);
+  const [restoreInfo, setRestoreInfo]   = useState(null);
+  const [characterRegistry, setCharacterRegistry] = useState(new Set());
+  const [currentFilename, setCurrentFilename] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+  const [showLicense, setShowLicense]     = useState(false);
+
+  // ── History manager (singleton ref, never re-created)
+  const history = useRef(new HistoryManager());
+
+  const fileInputRef    = useRef(null);
+  const divRefs         = useRef({});
+  const themePickerRef  = useRef(null);
+  const fileHandleRef   = useRef(null);
+  const autosaveTimer   = useRef(null);
+  const toastTimer      = useRef(null);
+  const savedToastTimer = useRef(null);
+  const blocksRef       = useRef(blocks);
+  const focusedIdxRef   = useRef(focusedIdx);
+  const showNumsRef     = useRef(showNums);
+  const numFmtRef       = useRef(numFmt);
+  const sceneNumMapRef  = useRef({});
+
+  useEffect(() => { blocksRef.current = blocks; }, [blocks]);
+  useEffect(() => { focusedIdxRef.current = focusedIdx; }, [focusedIdx]);
+  useEffect(() => { showNumsRef.current = showNums; }, [showNums]);
+  useEffect(() => { numFmtRef.current = numFmt; }, [numFmt]);
+
+  const T = resolveTheme(themeKey, accentIdx);
+  const accentList = ACCENT_OPTIONS[themeKey] || [];
+
+  // ── Snapshot helper: get current caret offset for the focused block
+  function makeSnapshot(overrideBlocks, overrideFocused, overrideOffset) {
+    const b = overrideBlocks ?? blocksRef.current;
+    const fi = overrideFocused ?? focusedIdxRef.current;
+    const block = b[fi];
+    let co = overrideOffset ?? 0;
+    if (overrideOffset === undefined && block) {
+      const el = divRefs.current[block.id];
+      if (el && document.activeElement === el) co = getCaretOffset(el);
+    }
+    return { blocks: b.map(bl => ({...bl})), focusedIdx: fi, caretOffset: co };
+  }
+
+  // ── Restore a snapshot into state and re-position caret
+  function restoreSnapshot(snap) {
+    if (!snap) return;
+    // Give blocks fresh ids so React re-keys the DOM correctly after undo
+    const restored = snap.blocks.map(b => ({...b, id: uid()}));
+    divRefs.current = {};
+    setBlocks(restored);
+    setFocusedIdx(snap.focusedIdx);
+    requestAnimationFrame(() => {
+      const b = restored[snap.focusedIdx];
+      if (!b) return;
+      const el = divRefs.current[b.id];
+      if (!el) return;
+      setCaretOffset(el, Math.min(snap.caretOffset, b.text.length));
+    });
+  }
+
+  // ── Seed the history with the initial blank document on mount
+  useEffect(() => {
+    history.current.push(makeSnapshot([makeBlock("","action")], 0, 0));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Global Ctrl+Z / Ctrl+Shift+Z handler
+  useEffect(() => {
+    function handleUndoRedo(e) {
+      const isUndo = (e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey;
+      const isRedo = (e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey));
+      if (!isUndo && !isRedo) return;
+
+      // Only intercept when focus is inside our editor area (not a plain <input>)
+      const active = document.activeElement;
+      const inEditor = active?.isContentEditable || active?.tagName === "INPUT" || active?.tagName === "TEXTAREA";
+      if (!inEditor) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (isUndo) {
+        const snap = history.current.undo();
+        if (snap) restoreSnapshot(snap);
+      } else {
+        const snap = history.current.redo();
+        if (snap) restoreSnapshot(snap);
+      }
+    }
+    window.addEventListener("keydown", handleUndoRedo, true); // capture phase — fires before block's onKeyDown
+    return () => window.removeEventListener("keydown", handleUndoRedo, true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: light)");
+    const h = e => { if (!localStorage.getItem("bf_theme")) setThemeKey(e.matches ? "light" : "dark"); };
+    mq.addEventListener("change", h);
+    return () => mq.removeEventListener("change", h);
+  }, []);
+  useEffect(() => {
+    const check = () => setMobile(window.innerWidth < 700);
+    check(); window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  useEffect(() => { if (!mobile) setSidebarOpen(true); else setSidebarOpen(false); }, [mobile]);
+  useEffect(() => { setAccentIdx(THEMES[themeKey]?.defaultAccentIdx ?? 0); }, [themeKey]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("bf_autosave"); if (!raw) return;
+      const parsed = JSON.parse(raw);
+      let recovered = null;
+      if (parsed?.fountain && typeof parsed.fountain === "string" && parsed.fountain.trim().length > 0) {
+        const {blocks:b} = parseFountain(parsed.fountain);
+        if (b?.length > 1 || (b?.length === 1 && b[0].text.trim() !== "")) recovered = b;
+      }
+      if (recovered) {
+        const titleBlock = recovered.find(b => b.type === "title");
+        setRestoreInfo({blocks:recovered, timestamp:parsed.timestamp||Date.now(), title:titleBlock?.text||null});
+      }
+    } catch(e) {}
+  }, []);
+
+  useEffect(() => {
+    const h = e => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", h);
+    return () => window.removeEventListener("beforeunload", h);
+  }, []);
+
+  useEffect(() => {
+    autosaveTimer.current = setInterval(() => {
+      const b = blocksRef.current; if (!b?.length) return;
+      const sn = sceneNumMapRef.current;
+      const content = blocksToFountain(b, showNumsRef.current, numFmtRef.current, sn);
+      try { localStorage.setItem("bf_autosave", JSON.stringify({fountain:content, timestamp:Date.now()})); } catch(e) {}
+      if (fileHandleRef.current) {
+        fileHandleRef.current.createWritable().then(w => w.write(content).then(() => w.close())).catch(() => {});
+      }
+    }, 60000);
+    return () => clearInterval(autosaveTimer.current);
+  }, []);
+
+  useEffect(() => {
+    if (showStartDialog) return;
+    toastTimer.current = setInterval(() => setShowToast(true), 3 * 60 * 1000);
+    return () => clearInterval(toastTimer.current);
+  }, [showStartDialog]);
+
+  useEffect(() => {
+    const h = e => { if (e.ctrlKey && e.key === "s") { e.preventDefault(); saveFountain(false); } };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [blocks, showNums, numFmt]);
+
+  // Scene numbering
+  const scenes = []; let sc = 0; const sceneNumMap = {};
+  blocks.forEach((b,i) => { if (b.type === "scene-heading") { sc++; sceneNumMap[i] = sc; scenes.push({text:b.text, blockIndex:i, num:sc}); } });
+  sceneNumMapRef.current = sceneNumMap;
+
+  const wordCount = blocks.reduce((n,b) => n + (b.text.split(/\s+/).filter(Boolean).length), 0);
+  const currentBlock = blocks[focusedIdx];
+  const currentZone = isTitleType(currentBlock?.type) ? "title" : "body";
+
+  useEffect(() => {
+    if (!currentBlock || isTitleType(currentBlock.type)) return;
+    const prev = focusedIdx > 0 ? blocks[focusedIdx-1] : null;
+    setSuggestions(scoredBodySuggestions(currentBlock.text, prev, currentBlock.type));
+  }, [focusedIdx, blocks]);
+
+  useEffect(() => {
+    const h = e => { if (themePickerRef.current && !themePickerRef.current.contains(e.target)) setShowThemePicker(false); };
+    document.addEventListener("pointerdown", h);
+    return () => document.removeEventListener("pointerdown", h);
+  }, []);
+
+  // ── Focus helpers
+  function focusBlock(index, pos="start") {
+    setFocusedIdx(index);
+    requestAnimationFrame(() => {
+      const b = blocksRef.current[index]; if (!b) return;
+      const el = divRefs.current[b.id]; if (!el) return;
+      if (pos === "end") setCaretEnd(el);
+      else setCaretOffset(el, 0);
+    });
+  }
+  function scrollToBlock(idx) {
+    requestAnimationFrame(() => {
+      const b = blocksRef.current[idx]; if (!b) return;
+      const el = divRefs.current[b.id]; if (el) el.scrollIntoView({behavior:"smooth", block:"center"});
+      focusBlock(idx);
+    });
+  }
+
+  function flashSaved() {
+    setShowSavedToast(true);
+    clearTimeout(savedToastTimer.current);
+    savedToastTimer.current = setTimeout(() => setShowSavedToast(false), 2500);
+  }
+
+  async function saveFountain(asNew=false) {
+    const content = blocksToFountain(blocks, showNums, numFmt, sceneNumMap);
+    if (typeof window.showSaveFilePicker === "function") {
+      try {
+        if (!asNew && fileHandleRef.current) {
+          const w = await fileHandleRef.current.createWritable();
+          await w.write(content); await w.close();
+          try { localStorage.removeItem("bf_autosave"); } catch(e) {}
+          flashSaved(); return;
+        }
+        const titleBlock = blocks.find(b => b.type === "title");
+        const suggested = (titleBlock?.text || "screenplay").toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9\-]/g,"") + ".fountain";
+        const handle = await window.showSaveFilePicker({suggestedName:suggested, types:[{description:"Fountain Screenplay",accept:{"text/plain":[".fountain",".txt"]}}]});
+        const w = await handle.createWritable();
+        await w.write(content); await w.close();
+        fileHandleRef.current = handle;
+        setCurrentFilename(handle.name);
+        try { localStorage.removeItem("bf_autosave"); } catch(e) {}
+        flashSaved();
+      } catch(e) {
+        if (e.name !== "AbortError") { downloadText(content, "screenplay.fountain"); flashSaved(); }
+      }
+    } else { downloadText(content, "screenplay.fountain"); flashSaved(); }
+  }
+
+  async function saveFountainAndReturn() {
+    const content = blocksToFountain(blocks, showNums, numFmt, sceneNumMap);
+    if (typeof window.showSaveFilePicker === "function") {
+      try {
+        if (fileHandleRef.current) {
+          const w = await fileHandleRef.current.createWritable();
+          await w.write(content); await w.close();
+          try { localStorage.removeItem("bf_autosave"); } catch(e) {}
+          flashSaved(); return true;
+        }
+        const titleBlock = blocks.find(b => b.type === "title");
+        const suggested = (titleBlock?.text || "screenplay").toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9\-]/g,"") + ".fountain";
+        const handle = await window.showSaveFilePicker({suggestedName:suggested, types:[{description:"Fountain Screenplay",accept:{"text/plain":[".fountain",".txt"]}}]});
+        const w = await handle.createWritable();
+        await w.write(content); await w.close();
+        fileHandleRef.current = handle;
+        setCurrentFilename(handle.name);
+        try { localStorage.removeItem("bf_autosave"); } catch(e) {}
+        flashSaved(); return true;
+      } catch(e) {
+        if (e.name === "AbortError") return false;
+        downloadText(content, "screenplay.fountain"); flashSaved(); return true;
+      }
+    } else { downloadText(content, "screenplay.fountain"); flashSaved(); return true; }
+  }
+
+  async function doOpen() {
+    if (typeof window.showOpenFilePicker === "function") {
+      try {
+        const [handle] = await window.showOpenFilePicker({types:[{description:"Fountain Screenplay",accept:{"text/plain":[".fountain",".txt"]}}]});
+        const file = await handle.getFile();
+        const text = await file.text();
+        const {blocks:parsed} = parseFountain(text);
+        const names = new Set();
+        parsed.filter(b => b.type === "character").forEach(b => {
+          const name = b.text.trim().toUpperCase().replace(/\s*\(.*\)\s*$/,"");
+          if (name) names.add(name);
+        });
+        divRefs.current = {};
+        setBlocks(parsed);
+        setFocusedIdx(0);
+        fileHandleRef.current = handle;
+        setCurrentFilename(handle.name);
+        setCharacterRegistry(names);
+        history.current = new HistoryManager();
+        history.current.push(makeSnapshot(parsed, 0, 0));
+      } catch(e) {
+        if (e.name !== "AbortError") fileInputRef.current?.click();
+      }
+    } else {
+      fileInputRef.current?.click();
+    }
+  }
+
+  function doNew() {
+    fileHandleRef.current = null;
+    setCurrentFilename(null);
+    const fresh = makeBlankScreenplay();
+    divRefs.current = {};
+    setBlocks(fresh);
+    setFocusedIdx(0);
+    history.current = new HistoryManager();
+    history.current.push(makeSnapshot(fresh, 0, 0));
+    requestAnimationFrame(() => focusBlock(5, "start"));
+  }
+
+  function handleNewScript() { setConfirmDialog({mode:"new", busy:false}); }
+  function handleOpenClick() { setConfirmDialog({mode:"open", busy:false}); }
+
+  async function handleConfirmPrimary() {
+    setConfirmDialog(d => ({...d, busy:true}));
+    const saved = await saveFountainAndReturn();
+    setConfirmDialog(null);
+    if (saved) {
+      if (confirmDialog?.mode === "new") doNew();
+      else doOpen();
+    }
+  }
+  function handleConfirmSecondary() {
+    const mode = confirmDialog?.mode;
+    setConfirmDialog(null);
+    if (mode === "new") doNew();
+    else doOpen();
+  }
+  function handleConfirmCancel() { setConfirmDialog(null); }
+
+  function makeBlankScreenplay() {
+    const today = new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
+    return [
+      makeBlock("Your Title Here","title"),
+      makeBlock("Written by","credit"),
+      makeBlock("Your Name","author"),
+      makeBlock(today,"draft-date"),
+      makeBlock("you@example.com","contact"),
+      makeBlock("","action"),
+    ];
+  }
+
+  function handleOpenFile(e) {
+    const file = e.target.files?.[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const {blocks:parsed} = parseFountain(ev.target.result);
+      const names = new Set();
+      parsed.filter(b => b.type === "character").forEach(b => {
+        const name = b.text.trim().toUpperCase().replace(/\s*\(.*\)\s*$/,"");
+        if (name) names.add(name);
+      });
+      divRefs.current = {}; setBlocks(parsed); setFocusedIdx(0);
+      setCurrentFilename(file.name);
+      setCharacterRegistry(names);
+      history.current = new HistoryManager();
+      history.current.push(makeSnapshot(parsed, 0, 0));
+    };
+    reader.readAsText(file); e.target.value = "";
+  }
+
+  function handleStartConfirm() {
+    setShowStartDialog(false); setRestoreInfo(null);
+    doNew();
+  }
+  function handleStartSkip() {
+    setShowStartDialog(false); setRestoreInfo(null);
+    doNew();
+  }
+  function handleRestore() {
+    if (!restoreInfo) return;
+    const fresh = restoreInfo.blocks.map(b => ({...b, id:uid()}));
+    const names = new Set();
+    fresh.filter(b => b.type === "character").forEach(b => {
+      const name = b.text.trim().toUpperCase().replace(/\s*\(.*\)\s*$/,"");
+      if (name) names.add(name);
+    });
+    divRefs.current = {}; setBlocks(fresh); setFocusedIdx(0);
+    setRestoreInfo(null); setShowStartDialog(false);
+    setCharacterRegistry(names);
+    history.current = new HistoryManager();
+    history.current.push(makeSnapshot(fresh, 0, 0));
+    try { localStorage.removeItem("bf_autosave"); } catch(e) {}
+  }
+
+  // ── setBlockType: structural change — flush pending text, push fresh snapshot
+  function setBlockType(index, type) {
+    const cur = blocks[index];
+    if (isTitleType(cur.type) !== isTitleType(type)) return;
+    history.current.flush();
+    if (type === "character" && cur.text.trim()) {
+      const baseName = cur.text.trim().toUpperCase().replace(/\s*\(.*\)\s*$/,"");
+      if (baseName) setCharacterRegistry(r => new Set([...r, baseName]));
+    }
+    const newBlocks = blocks.map((b,i) => i === index ? {...b, type, manual:true} : b);
+    setBlocks(newBlocks);
+    setShowSuggestions(false);
+    history.current.push(makeSnapshot(newBlocks, index, cur.text.length));
+    requestAnimationFrame(() => { const b=blocksRef.current[index]; const el=b&&divRefs.current[b.id]; if(el) setCaretEnd(el); });
+  }
+
+  // ── handleInput: coalesced text change
+  function handleInput(index, text) {
+    setBlocks(prev => {
+      const nb = [...prev]; const old = nb[index]; const prevBlock = index > 0 ? nb[index-1] : null;
+      if (isTitleType(old.type)) { nb[index] = {...old, text}; }
+      else {
+        const autoTriggers = [/^(INT|EXT|EST|INT\.\/EXT|INT\/EXT|I\/E)[\. ]/i,/^\.\w/,/^!/,/^~/,/^>/,/^={3,}$/,/^[A-Z][A-Z ]*TO:$/];
+        const forceAuto = autoTriggers.some(r => r.test(text.trim()));
+        const isManual = old.manual && !forceAuto;
+        const type = isManual ? old.type : detectBodyType(text, prevBlock, old.type);
+        nb[index] = {...old, text, type, manual:isManual};
+      }
+      // Coalesced push — merges rapid keystrokes into one undo step
+      const el = divRefs.current[nb[index].id];
+      const caretOffset = el && document.activeElement === el ? getCaretOffset(el) : text.length;
+      history.current.pushCoalesced(makeSnapshot(nb, index, caretOffset));
+      return nb;
+    });
+  }
+
+  function handleKeyDown(e, index) {
+    const block = blocks[index];
+    const el = divRefs.current[block.id];
+    const {atStart, atEnd} = el ? getCaretAtBoundary(el) : {atStart:true, atEnd:true};
+    const curOffset = el ? getCaretOffset(el) : 0;
+    const zone = isTitleType(block.type) ? "title" : "body";
+    const group = zone === "title" ? TITLE_TYPES : BODY_TYPES;
+
+    // Undo/redo are handled globally in capture phase — skip here
+    if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "y")) return;
+
+    if (e.key === "Tab") {
+      e.preventDefault();
+      history.current.flush();
+      const newType = cycleInGroup(block.type, group);
+      const newBlocks = blocks.map((b,i) => i === index ? {...b, type:newType, manual:true} : b);
+      setBlocks(newBlocks);
+      history.current.push(makeSnapshot(newBlocks, index, block.text.length));
+      return;
+    }
+
+    if (e.ctrlKey && e.shiftKey && zone === "body") {
+      const map = {s:"scene-heading",a:"action",c:"character",d:"dialogue",p:"parenthetical",t:"transition"};
+      const t = map[e.key.toLowerCase()]; if (t) { e.preventDefault(); setBlockType(index, t); return; }
+    }
+
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      history.current.flush();
+      const fullText = el?.innerText.replace(/\n$/,"") || block.text;
+      const before = fullText.slice(0, curOffset);
+      const after  = fullText.slice(curOffset);
+
+      if (zone === "title") {
+        const TITLE_NEXT = {"title":"credit","credit":"author","author":"draft-date","draft-date":"contact","contact":"contact"};
+        const nextTitleType = TITLE_NEXT[block.type] || "contact";
+        const newBlock = makeBlock(after, nextTitleType);
+        const newBlocks = [...blocks];
+        newBlocks[index] = {...newBlocks[index], text:before};
+        newBlocks.splice(index+1, 0, newBlock);
+        setBlocks(newBlocks);
+        history.current.push(makeSnapshot(newBlocks, index+1, 0));
+        requestAnimationFrame(() => focusBlock(index+1, "start"));
+        return;
+      }
+
+      const TRANSITION_PATTERNS = [/^cut to:?\s*$/i,/^fade to:?\s*$/i,/^fade to black:?\s*$/i,/^fade out:?\s*$/i,/^fade in:?\s*$/i,/^smash cut:?\s*$/i,/^match cut:?\s*$/i,/^jump cut:?\s*$/i,/^dissolve to:?\s*$/i,/^iris in:?\s*$/i,/^iris out:?\s*$/i];
+      const SUFFIX_MAP = {"vo":"(V.O.)","os":"(O.S.)","oc":"(O.C.)","of":"(O.F.)","cont":"(CONT'D)","contd":"(CONT'D)"};
+      const trimmed = fullText.trim();
+      const suffixMatch = trimmed.match(/^(.+?)\s+(vo|os|oc|of|contd?)\s*$/i);
+      const baseName = suffixMatch ? suffixMatch[1].trim().toUpperCase() : trimmed.toUpperCase();
+      const suffix = suffixMatch ? SUFFIX_MAP[suffixMatch[2].toLowerCase()] : null;
+      const isKnownCharacter = block.type === "action" && characterRegistry.has(baseName);
+      const isKnownTransition = block.type === "action" && TRANSITION_PATTERNS.some(r => r.test(trimmed));
+
+      if (isKnownTransition) {
+        const transText = trimmed.toUpperCase().replace(/:?\s*$/, ":");
+        const newBlock = makeBlock("","action");
+        const newBlocks = [...blocks];
+        newBlocks[index] = {...newBlocks[index], text:transText, type:"transition", manual:true};
+        newBlocks.splice(index+1, 0, newBlock);
+        setBlocks(newBlocks);
+        history.current.push(makeSnapshot(newBlocks, index+1, 0));
+        requestAnimationFrame(() => focusBlock(index+1, "start"));
+        return;
+      }
+      if (isKnownCharacter) {
+        const charText = suffix ? `${baseName} ${suffix}` : baseName;
+        const newBlock = makeBlock("","dialogue");
+        const newBlocks = [...blocks];
+        newBlocks[index] = {...newBlocks[index], text:charText, type:"character", manual:true};
+        newBlocks.splice(index+1, 0, newBlock);
+        setBlocks(newBlocks);
+        history.current.push(makeSnapshot(newBlocks, index+1, 0));
+        requestAnimationFrame(() => focusBlock(index+1, "start"));
+        return;
+      }
+      if (block.type === "character" && fullText.trim()) {
+        const name = fullText.trim().toUpperCase().replace(/\s*\(.*\)\s*$/,"");
+        if (name) setCharacterRegistry(r => new Set([...r, name]));
+      }
+
+      let newType = "action";
+      if (block.type === "scene-heading")      newType = "action";
+      else if (block.type === "character")     newType = "dialogue";
+      else if (block.type === "dialogue")      newType = "action";
+      else if (block.type === "parenthetical") newType = "dialogue";
+      else if (block.type === "transition")    newType = "scene-heading";
+
+      const newBlock = makeBlock(after, newType);
+      const newBlocks = [...blocks];
+      newBlocks[index] = {...newBlocks[index], text:before};
+      newBlocks.splice(index+1, 0, newBlock);
+      setBlocks(newBlocks);
+      history.current.push(makeSnapshot(newBlocks, index+1, 0));
+      requestAnimationFrame(() => focusBlock(index+1, "start"));
+      return;
+    }
+
+    if (e.key === "Backspace" && atStart) {
+      if (index === 0) return;
+      const prevBlock = blocks[index-1];
+      if (isTitleType(block.type) !== isTitleType(prevBlock.type)) { e.preventDefault(); return; }
+      e.preventDefault();
+      history.current.flush();
+      const prevEl = divRefs.current[prevBlock.id];
+      const prevText = prevEl?.innerText.replace(/\n$/,"") || prevBlock.text;
+      const curText = el?.innerText.replace(/\n$/,"") || block.text;
+      const joinLen = prevText.length;
+      const newBlocks = [...blocks];
+      newBlocks[index-1] = {...newBlocks[index-1], text:prevText+curText};
+      newBlocks.splice(index, 1);
+      setBlocks(newBlocks);
+      history.current.push(makeSnapshot(newBlocks, index-1, joinLen));
+      requestAnimationFrame(() => {
+        const b = blocksRef.current[index-1]; if (!b) return;
+        const el2 = divRefs.current[b.id]; if (!el2) return;
+        setFocusedIdx(index-1); setCaretOffset(el2, joinLen);
+      });
+      return;
+    }
+
+    if (e.key === "Delete" && atEnd && index < blocks.length-1) {
+      const nextBlock = blocks[index+1];
+      if (isTitleType(block.type) !== isTitleType(nextBlock.type)) { e.preventDefault(); return; }
+      e.preventDefault();
+      history.current.flush();
+      const curText = el?.innerText.replace(/\n$/,"") || block.text;
+      const nextEl = divRefs.current[nextBlock.id];
+      const nextText = nextEl?.innerText.replace(/\n$/,"") || nextBlock.text;
+      const newBlocks = [...blocks];
+      newBlocks[index] = {...newBlocks[index], text:curText+nextText};
+      newBlocks.splice(index+1, 1);
+      setBlocks(newBlocks);
+      history.current.push(makeSnapshot(newBlocks, index, curText.length));
+      return;
+    }
+
+    if (e.key === "ArrowUp" && atStart && index > 0)               { e.preventDefault(); focusBlock(index-1, "end"); }
+    if (e.key === "ArrowDown" && atEnd && index < blocks.length-1) { e.preventDefault(); focusBlock(index+1, "start"); }
+  }
+
+  function openPrint() {
+    const html = buildPrintHtml(blocks, watermark, wmOpacity, showNums, numFmt, sceneNumMap, titleStyle);
+    setPrintHtml(html); setPrintOpen(true);
+  }
+  function triggerPrint() {
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:8.5in;height:11in;border:none;";
+    document.body.appendChild(iframe);
+    const html = buildPrintHtml(blocks, watermark, wmOpacity, showNums, numFmt, sceneNumMap, titleStyle);
+    iframe.contentDocument.open(); iframe.contentDocument.write(html); iframe.contentDocument.close();
+    let printed = false;
+    function doPrint() {
+      if (printed) return; printed = true;
+      iframe.contentWindow.focus(); iframe.contentWindow.print();
+      setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 2000);
+    }
+    iframe.contentWindow.onload = doPrint; setTimeout(doPrint, 800);
+  }
+  function handleWmChange(v) { setWatermark(v); setPrintHtml(buildPrintHtml(blocks,v,wmOpacity,showNums,numFmt,sceneNumMap,titleStyle)); }
+  function handleOpacityChange(v) { setWmOpacity(v); setPrintHtml(buildPrintHtml(blocks,watermark,v,showNums,numFmt,sceneNumMap,titleStyle)); }
+
+  function handleReorderScenes(fromIdx, toIdx) {
+    history.current.flush();
+    setBlocks(prev => {
+      const firstScene = prev.findIndex(b => b.type === "scene-heading"); if (firstScene === -1) return prev;
+      const pinned = prev.slice(0, firstScene);
+      const chunks = []; let cur = null;
+      for (let i = firstScene; i < prev.length; i++) {
+        if (prev[i].type === "scene-heading") { if (cur) chunks.push(cur); cur = [prev[i]]; }
+        else if (cur) cur.push(prev[i]);
+      }
+      if (cur) chunks.push(cur);
+      const r = [...chunks]; const [moved] = r.splice(fromIdx, 1); r.splice(toIdx, 0, moved);
+      const newBlocks = [...pinned, ...r.flat()];
+      history.current.push(makeSnapshot(newBlocks, 0, 0));
+      return newBlocks;
+    });
+    setFocusedIdx(0);
+  }
+
+  const numFmts = [{v:"1",l:"1, 2, 3"},{v:"101",l:"101, 102"},{v:"A1",l:"A1, A2"}];
+
+  function AccentSwatch({a, active, onSelect}) {
+    return (
+      <button onPointerDown={e=>{e.preventDefault();onSelect();}} title={a.name}
+        style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"3px",background:active?T.accent+"22":"transparent",border:`1px solid ${active?T.accent+"88":"transparent"}`,borderRadius:"6px",padding:"5px 6px",cursor:"pointer",minWidth:"44px"}}>
+        <div style={{display:"flex",gap:"2px"}}>
+          <span style={{width:"8px",height:"8px",borderRadius:"50%",background:a.sceneColor,display:"block"}}/>
+          <span style={{width:"8px",height:"8px",borderRadius:"50%",background:a.characterColor,display:"block"}}/>
+          <span style={{width:"8px",height:"8px",borderRadius:"50%",background:a.transitionColor,display:"block"}}/>
+        </div>
+        <span style={{fontSize:"7.5px",color:active?T.accent:T.muted,fontFamily:"'IBM Plex Mono',monospace",letterSpacing:".04em",whiteSpace:"nowrap"}}>{a.name}</span>
+      </button>
+    );
+  }
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",height:"100vh",background:T.bg,color:T.text,fontFamily:"'IBM Plex Mono',monospace",overflow:"hidden",position:"relative"}}>
+
+      {confirmDialog && (
+        <ConfirmDialog
+          T={T}
+          title={confirmDialog.mode === "new" ? "Start a new screenplay?" : "Open a file?"}
+          body="Your current screenplay will be lost unless you save it first."
+          primaryLabel={confirmDialog.mode === "new" ? "💾 Save & New" : "💾 Save & Open"}
+          primaryBusy={confirmDialog.busy}
+          onPrimary={handleConfirmPrimary}
+          secondaryLabel={confirmDialog.mode === "new" ? "Disregard & New" : "Disregard & Open"}
+          onSecondary={handleConfirmSecondary}
+          onCancel={handleConfirmCancel}
+        />
+      )}
+
+      {showStartDialog && (
+        <StartDialog T={T} onConfirm={handleStartConfirm} onSkip={handleStartSkip}
+          onOpen={() => { setShowStartDialog(false); setRestoreInfo(null); doOpen(); }}
+          onTour={() => { const s=makeSample(); divRefs.current={}; setBlocks(s); setFocusedIdx(0); history.current=new HistoryManager(); history.current.push(makeSnapshot(s,0,0)); setShowStartDialog(false); setRestoreInfo(null); }}
+          restoreInfo={restoreInfo} onRestore={handleRestore}/>
+      )}
+
+      {printOpen && (
+        <PrintModal html={printHtml} wm={watermark} wmOpacity={wmOpacity}
+          onWmChange={handleWmChange} onOpacityChange={handleOpacityChange}
+          onClose={() => setPrintOpen(false)} onPrint={triggerPrint} T={T}/>
+      )}
+
+      {/* ── TOOLBAR ── */}
+      <div style={{display:"flex",alignItems:"center",gap:"4px",padding:"0 8px",height:mobile?"48px":"40px",background:T.toolbar,borderBottom:`1px solid ${T.border}`,flexShrink:0,zIndex:20}}>
+        <button onPointerDown={() => setSidebarOpen(s => !s)} style={{background:sidebarOpen?T.accent+"22":"transparent",border:`1px solid ${sidebarOpen?T.accent+"44":T.border}`,color:sidebarOpen?T.accent:T.muted,borderRadius:"5px",padding:"5px 8px",cursor:"pointer",fontSize:mobile?"16px":"13px",lineHeight:1,flexShrink:0,minWidth:mobile?"38px":"auto",minHeight:mobile?"36px":"auto",display:"flex",alignItems:"center",justifyContent:"center"}}>☰</button>
+        {!mobile && <div style={{fontSize:"10px",fontWeight:"700",letterSpacing:".16em",textTransform:"uppercase",color:T.accent,marginLeft:"2px",flexShrink:0}}>Bamboo Fountain</div>}
+        {currentFilename && (
+          <div style={{fontSize:"11px",fontWeight:"700",fontFamily:"'Courier Prime',monospace",color:T.accent,marginLeft:"8px",marginRight:"4px",flexShrink:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:mobile?"130px":"280px"}}>
+            {currentFilename}
+          </div>
+        )}
+        <div style={{width:"1px",height:"16px",background:T.border,margin:"0 1px"}}/>
+        <button onClick={() => setShowNums(s => !s)} style={{background:showNums?T.accent+"22":"transparent",color:showNums?T.accent:T.muted,border:`1px solid ${showNums?T.accent+"44":T.border}`,borderRadius:"4px",padding:"3px 7px",cursor:"pointer",fontSize:"9.5px",fontFamily:"inherit",letterSpacing:".04em",transition:"all .15s",flexShrink:0,minHeight:mobile?"36px":"auto"}}>{mobile?"#":"# scenes"}</button>
+        {showNums && !mobile && (
+          <select value={numFmt} onChange={e => setNumFmt(e.target.value)} style={{background:T.inputBg,color:T.text,border:`1px solid ${T.inputBorder}`,borderRadius:"4px",padding:"3px 4px",fontSize:"9px",fontFamily:"inherit",cursor:"pointer"}}>
+            {numFmts.map(f => <option key={f.v} value={f.v}>{f.l}</option>)}
+          </select>
+        )}
+        <div style={{width:"1px",height:"16px",background:T.border,margin:"0 1px"}}/>
+
+        {currentZone === "body" && (
+          <div style={{position:"relative"}}>
+            <button onPointerDown={e=>{e.preventDefault();setShowSuggestions(s=>!s);}} style={{background:showSuggestions?T.accent+"22":"transparent",border:`1px solid ${showSuggestions?T.accent+"44":T.border}`,color:showSuggestions?T.accent:T.muted,borderRadius:"4px",padding:"3px 7px",cursor:"pointer",fontSize:"9.5px",fontFamily:"inherit",display:"flex",alignItems:"center",gap:"4px",minHeight:mobile?"36px":"auto",flexShrink:0}}>
+              <span style={{width:"6px",height:"6px",borderRadius:"50%",background:TYPE_META[currentBlock?.type]?.color||T.muted,display:"inline-block"}}/>
+              {!mobile && <span>{TYPE_META[currentBlock?.type]?.label?.split(" ")[0]||"—"}</span>}
+              <span style={{fontSize:"7px",color:T.muted}}>▾</span>
+            </button>
+            {showSuggestions && (
+              <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,zIndex:1000,background:T.toolbar,border:`1px solid ${T.border}`,borderRadius:"8px",boxShadow:"0 8px 28px rgba(0,0,0,0.35)",padding:"4px",minWidth:"190px"}}>
+                <div style={{padding:"4px 10px 6px",fontSize:"8px",color:T.muted,letterSpacing:".1em",textTransform:"uppercase",borderBottom:`1px solid ${T.border}`,marginBottom:"2px"}}>Suggested formats</div>
+                {suggestions.map((type,i) => {
+                  const meta = TYPE_META[type]; const isActive = type===currentBlock?.type;
+                  return (
+                    <button key={type} onPointerDown={e=>{e.preventDefault();setBlockType(focusedIdx,type);requestAnimationFrame(()=>{const b=blocksRef.current[focusedIdx];const el=b&&divRefs.current[b.id];if(el)el.focus();});}}
+                      style={{display:"flex",alignItems:"center",gap:"8px",background:isActive?meta.color+"22":"transparent",border:`1px solid ${isActive?meta.color+"55":"transparent"}`,borderRadius:"5px",padding:"7px 10px",cursor:"pointer",textAlign:"left",width:"100%"}}>
+                      <span style={{width:"7px",height:"7px",borderRadius:"50%",background:meta.color,flexShrink:0}}/>
+                      <span style={{fontSize:"10px",fontFamily:"'IBM Plex Mono',monospace",letterSpacing:".06em",textTransform:"uppercase",color:isActive?meta.color:T.text,fontWeight:isActive?"700":"400",flex:1}}>{meta.label}</span>
+                      {i===0&&!isActive&&<span style={{fontSize:"7.5px",color:T.muted,border:`1px solid ${T.border}`,borderRadius:"3px",padding:"1px 4px"}}>auto</span>}
+                      {isActive&&<span style={{fontSize:"7.5px",color:meta.color,border:`1px solid ${meta.color}55`,borderRadius:"3px",padding:"1px 4px"}}>active</span>}
+                    </button>
+                  );
+                })}
+                <div style={{borderTop:`1px solid ${T.border}`,marginTop:"2px",padding:"4px 0 2px"}}>
+                  {BODY_TYPES.filter(t => !suggestions.includes(t)).map(type => {
+                    const meta = TYPE_META[type]; const isActive = type===currentBlock?.type;
+                    return (
+                      <button key={type} onPointerDown={e=>{e.preventDefault();setBlockType(focusedIdx,type);requestAnimationFrame(()=>{const b=blocksRef.current[focusedIdx];const el=b&&divRefs.current[b.id];if(el)el.focus();});}}
+                        style={{display:"flex",alignItems:"center",gap:"8px",background:isActive?meta.color+"22":"transparent",border:"1px solid transparent",borderRadius:"5px",padding:"5px 10px",cursor:"pointer",textAlign:"left",width:"100%"}}>
+                        <span style={{width:"5px",height:"5px",borderRadius:"50%",background:meta.color+"88",flexShrink:0}}/>
+                        <span style={{fontSize:"9.5px",fontFamily:"'IBM Plex Mono',monospace",letterSpacing:".04em",textTransform:"uppercase",color:T.muted,fontWeight:"400",flex:1}}>{meta.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div style={{flex:1}}/>
+        {!mobile && <span style={{fontSize:"9px",color:T.muted,marginRight:"4px"}}>{scenes.length}sc · {wordCount}w</span>}
+
+        <div style={{position:"relative"}} ref={themePickerRef}>
+          <button onPointerDown={e=>{e.preventDefault();setShowThemePicker(s=>!s);}} title="Theme"
+            style={{display:"flex",alignItems:"center",gap:"6px",background:showThemePicker?T.accent+"18":"transparent",border:`1px solid ${showThemePicker?T.accent+"88":T.border}`,borderRadius:"6px",padding:"3px 8px 3px 6px",cursor:"pointer",flexShrink:0,transition:"all .15s",height:mobile?"36px":"26px"}}>
+            <span style={{width:"12px",height:"12px",borderRadius:"50%",background:T.accent,flexShrink:0,display:"block"}}/>
+            {!mobile && <span style={{fontSize:"9.5px",fontFamily:"'IBM Plex Mono',monospace",letterSpacing:".03em",color:showThemePicker?T.accent:T.muted}}>Theme</span>}
+          </button>
+          {showThemePicker && (
+            <div style={{position:"absolute",top:"calc(100% + 6px)",right:0,zIndex:1000,background:T.toolbar,border:`1px solid ${T.border}`,borderRadius:"10px",boxShadow:"0 8px 28px rgba(0,0,0,0.4)",padding:"6px",minWidth:"240px",maxHeight:"80vh",overflowY:"auto"}}>
+              <div style={{padding:"4px 8px 6px",fontSize:"8px",color:T.muted,letterSpacing:".1em",textTransform:"uppercase"}}>Theme</div>
+              <button onPointerDown={e=>{e.preventDefault();localStorage.removeItem("bf_theme");setIsAutoTheme(true);setThemeKey(window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");}}
+                style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",background:isAutoTheme?T.accent+"18":"transparent",border:`1px solid ${isAutoTheme?T.accent+"44":"transparent"}`,borderRadius:"6px",padding:"7px 10px",cursor:"pointer",marginBottom:"2px"}}>
+                <span style={{width:"12px",height:"12px",borderRadius:"50%",background:"linear-gradient(135deg,#111 50%,#f0ece4 50%)",flexShrink:0,border:isAutoTheme?`2px solid ${T.text}`:"2px solid transparent"}}/>
+                <span style={{fontSize:"10px",fontFamily:"'IBM Plex Mono',monospace",color:isAutoTheme?T.accent:T.text,fontWeight:isAutoTheme?"700":"400",flex:1,letterSpacing:".04em"}}>Auto</span>
+                <span style={{fontSize:"10px",color:T.muted}}>OS</span>
+              </button>
+              {THEME_ORDER.map(key => {
+                const th = THEMES[key]; const isActive = !isAutoTheme && themeKey===key;
+                const pa = ACCENT_OPTIONS[key]?.[th.defaultAccentIdx??0]?.accent ?? "#888";
+                return (
+                  <button key={key} onPointerDown={e=>{e.preventDefault();localStorage.setItem("bf_theme",key);setIsAutoTheme(false);setThemeKey(key);}}
+                    style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",background:isActive?T.accent+"18":"transparent",border:`1px solid ${isActive?T.accent+"44":"transparent"}`,borderRadius:"6px",padding:"7px 10px",cursor:"pointer"}}>
+                    <span style={{width:"12px",height:"12px",borderRadius:"50%",background:pa,flexShrink:0,border:isActive?`2px solid ${T.text}`:"2px solid transparent"}}/>
+                    <span style={{fontSize:"10px",fontFamily:"'IBM Plex Mono',monospace",color:isActive?T.accent:T.text,fontWeight:isActive?"700":"400",flex:1,letterSpacing:".04em"}}>{th.name}</span>
+                    <span style={{fontSize:"13px",lineHeight:1}}>{th.icon}</span>
+                  </button>
+                );
+              })}
+              {accentList.length > 0 && (<>
+                <div style={{borderTop:`1px solid ${T.border}`,margin:"6px 0 4px",padding:"4px 8px 2px",fontSize:"8px",color:T.muted,letterSpacing:".1em",textTransform:"uppercase"}}>Color Palette</div>
+                <div style={{display:"flex",gap:"4px",padding:"4px 6px 8px",flexWrap:"wrap"}}>
+                  {accentList.map((a,i) => <AccentSwatch key={i} a={a} active={accentIdx===i} onSelect={() => setAccentIdx(i)}/>)}
+                </div>
+                <div style={{margin:"0 6px 6px",borderRadius:"6px",border:`1px solid ${T.border}`,padding:"8px 10px",background:T.inputBg}}>
+                  <div style={{fontSize:"8px",color:T.muted,letterSpacing:".08em",textTransform:"uppercase",marginBottom:"6px"}}>{accentList[accentIdx]?.name} preview</div>
+                  <div style={{fontFamily:"'Courier Prime',monospace",fontSize:"10px",lineHeight:"1.8"}}>
+                    <div style={{color:T.sceneColor,fontWeight:"700",textTransform:"uppercase",letterSpacing:".04em"}}>EXT. SCENE HEADING</div>
+                    <div style={{color:T.text,opacity:.7}}>Action line text...</div>
+                    <div style={{color:T.characterColor,fontWeight:"600",textTransform:"uppercase",paddingLeft:"30%"}}>CHARACTER</div>
+                    <div style={{paddingLeft:"15%",paddingRight:"15%",color:T.text,opacity:.7}}>Dialogue line here.</div>
+                    <div style={{color:T.transitionColor,fontWeight:"700",textAlign:"right",textTransform:"uppercase"}}>CUT TO:</div>
+                  </div>
+                </div>
+              </>)}
+            </div>
+          )}
+        </div>
+
+        <div style={{width:"1px",height:"16px",background:T.border,margin:"0 2px"}}/>
+        <button onClick={handleNewScript} style={{background:"transparent",color:T.muted,border:`1px solid ${T.border}`,borderRadius:"5px",padding:mobile?"7px 9px":"3px 9px",cursor:"pointer",fontSize:"9.5px",fontFamily:"inherit",letterSpacing:".03em",minHeight:mobile?"36px":"auto",flexShrink:0}}>{mobile?"🆕":"🆕 New"}</button>
+        <input ref={fileInputRef} type="file" accept=".fountain,.txt" style={{display:"none"}} onChange={handleOpenFile}/>
+        <button onClick={handleOpenClick} style={{background:"transparent",color:T.muted,border:`1px solid ${T.border}`,borderRadius:"5px",padding:mobile?"7px 9px":"3px 9px",cursor:"pointer",fontSize:"9.5px",fontFamily:"inherit",letterSpacing:".03em",minHeight:mobile?"36px":"auto",flexShrink:0}}>{mobile?"📂":"📂 Open"}</button>
+        <button onClick={() => saveFountain(false)} style={{background:T.accent+"22",color:T.accent,border:`1px solid ${T.accent+"66"}`,borderRadius:"5px",padding:mobile?"7px 9px":"3px 9px",cursor:"pointer",fontSize:"9.5px",fontFamily:"inherit",letterSpacing:".03em",minHeight:mobile?"36px":"auto",flexShrink:0,fontWeight:"600"}}>{mobile?"💾":"💾 .fountain"}</button>
+        <button onClick={openPrint} style={{background:T.accent,color:"#fff",border:"none",borderRadius:"5px",padding:mobile?"7px 11px":"4px 11px",cursor:"pointer",fontSize:mobile?"11px":"9.5px",fontFamily:"inherit",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",flexShrink:0,minHeight:mobile?"36px":"auto"}}>{mobile?"PDF":"Print / PDF"}</button>
+      </div>
+
+      {/* ── BODY ── */}
+      <div style={{flex:1,display:"flex",overflow:"hidden",position:"relative"}}>
+        {mobile && sidebarOpen && <div onPointerDown={() => setSidebarOpen(false)} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.55)",zIndex:15}}/>}
+        {!mobile && !sidebarOpen && (
+          <div style={{width:"32px",minWidth:"32px",flexShrink:0,background:T.toolbar,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",alignItems:"center",paddingTop:"8px",gap:"4px",overflowY:"auto",zIndex:1}}>
+            {scenes.map((s,i) => {
+              const isActive = s === [...scenes].reverse().find(sc => sc.blockIndex <= focusedIdx);
+              return (
+                <div key={i} title={s.text||"—"} onPointerDown={() => scrollToBlock(s.blockIndex)}
+                  style={{width:"24px",height:"24px",borderRadius:"4px",background:isActive?T.accent:T.accent+"22",border:`1px solid ${isActive?T.accent:T.accent+"44"}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,transition:"background .12s"}}>
+                  <span style={{fontSize:"7px",fontFamily:"'IBM Plex Mono',monospace",color:isActive?"#fff":T.accent,fontWeight:"700"}}>{s.num}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <div style={{width:sidebarOpen?(mobile?"min(80vw,260px)":"186px"):"0",minWidth:sidebarOpen?(mobile?"min(80vw,260px)":"186px"):"0",flexShrink:0,overflow:"hidden",transition:"width .2s ease,min-width .2s ease",zIndex:mobile?16:1,position:mobile?"absolute":"relative",left:0,top:0,bottom:0,boxShadow:mobile&&sidebarOpen?"4px 0 24px rgba(0,0,0,0.4)":"none"}}>
+          <div style={{width:mobile?"min(80vw,260px)":"186px",height:"100%"}}>
+            <SceneNav scenes={scenes} focusedIdx={focusedIdx} showNums={showNums} numFmt={numFmt} T={T} mobile={mobile}
+              onSelect={scrollToBlock} onClose={() => setSidebarOpen(false)} onReorder={handleReorderScenes}
+              currentFilename={currentFilename}/>
+          </div>
+        </div>
+
+        <div style={{flex:1,overflowY:"auto",padding:mobile?"1.5rem 1rem 2rem":"2.5rem 0 4rem",WebkitOverflowScrolling:"touch"}}>
+          <div style={{maxWidth:mobile?"100%":"min(860px,calc(100% - clamp(40px,6vw,100px) * 2))",margin:"0 auto",position:"relative",paddingLeft:mobile?"0":"clamp(48px,6vw,72px)",paddingRight:mobile?"0":"clamp(48px,6vw,72px)"}}>
+            {blocks.map((block, index) => {
+              const isFirstBody = isBodyType(block.type) && (index === 0 || isTitleType(blocks[index-1].type));
+              return (
+                <React.Fragment key={block.id}>
+                  {isFirstBody && blocks.some(b => isTitleType(b.type)) && <TitleZoneSeparator T={T}/>}
+                  <Block
+                    block={block} index={index} focused={focusedIdx===index}
+                    sceneNum={sceneNumMap[index]||null} showNums={showNums} numFmt={numFmt}
+                    T={T} mobile={mobile}
+                    onInput={handleInput} onFocus={setFocusedIdx} onKeyDown={handleKeyDown}
+                    divRef={el => { if (el) divRefs.current[block.id] = el; }}
+                  />
+                </React.Fragment>
+              );
+            })}
+            <div style={{height:"6rem"}} onPointerDown={() => focusBlock(blocks.length-1, "end")}/>
+          </div>
+        </div>
+      </div>
+
+      <FormatBar currentType={currentBlock?.type||"action"} onSelect={t => {
+        setBlockType(focusedIdx, t);
+        requestAnimationFrame(() => { const b=blocksRef.current[focusedIdx]; const el=b&&divRefs.current[b.id]; if(el) el.focus(); });
+      }} T={T} mobile={mobile}/>
+
+      {!mobile && (
+        <div style={{height:"20px",background:T.statusBg,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",padding:"0 12px",gap:"14px",fontSize:"9px",color:T.muted,flexShrink:0}}>
+          <span style={{color:T.accent,letterSpacing:".08em"}}>Bamboo Fountain</span>
+          <span>{scenes.length} scenes · {blocks.length} elements · {wordCount} words</span>
+          <span style={{marginLeft:"auto"}}>{currentBlock?(TYPE_META[currentBlock.type]?.label||currentBlock.type):"—"} · {THEMES[themeKey].name} · {accentList[accentIdx]?.name||""}</span>
+          <span style={{cursor:"pointer",opacity:.6,letterSpacing:".06em",textDecoration:"underline",textDecorationStyle:"dotted",userSelect:"none"}} onClick={()=>setShowLicense(true)}>Licenses</span>
+        </div>
+      )}
+
+      {showLicense && (
+        <div onClick={()=>setShowLicense(false)} style={{position:"fixed",inset:0,zIndex:4000,background:"rgba(0,0,0,0.65)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:T.toolbar,border:`1px solid ${T.border}`,borderRadius:"10px",width:"min(680px,92vw)",maxHeight:"80vh",display:"flex",flexDirection:"column",boxShadow:"0 16px 48px rgba(0,0,0,0.5)"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px 10px",borderBottom:`1px solid ${T.border}`,flexShrink:0}}>
+              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:"10px",fontWeight:"700",letterSpacing:".1em",textTransform:"uppercase",color:T.accent}}>Open Source Licenses</span>
+              <button onClick={()=>setShowLicense(false)} style={{background:"transparent",border:`1px solid ${T.border}`,borderRadius:"5px",color:T.muted,fontSize:"10px",fontFamily:"'IBM Plex Mono',monospace",letterSpacing:".06em",padding:"3px 10px",cursor:"pointer"}}>Exit</button>
+            </div>
+            <div style={{overflowY:"auto",padding:"16px",fontFamily:"'Courier Prime',monospace",fontSize:"11px",lineHeight:"1.75",color:T.text,whiteSpace:"pre-wrap"}}>{`MIT License
+
+Copyright (c) 2026 ronin-on-linux
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+This project includes third-party software components licensed under open source licenses.
+---
+
+Bamboo Fountain utilizes components from Fountain.
+
+MIT License
+
+Copyright (c) 2012 Nima Yousefi & John August
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.`}</div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        ::-webkit-scrollbar-thumb{background:${T.scrollThumb};}
+        button{transition:filter .12s,transform .1s,opacity .12s;}
+        button:hover{filter:brightness(1.15);}
+        button:active{transform:scale(0.96);filter:brightness(0.9);}
+      `}</style>
+
+      {showSavedToast && (
+        <div style={{position:"fixed",bottom:"28px",right:"28px",zIndex:3500,background:T.toolbar,border:`1px solid ${T.accent+"66"}`,borderRadius:"10px",padding:"14px 16px",boxShadow:"0 8px 32px rgba(0,0,0,0.4)",display:"flex",alignItems:"center",gap:"12px",minWidth:"260px",pointerEvents:"none"}}>
+          <span style={{fontSize:"16px"}}>✓</span>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:"9px",fontWeight:"700",letterSpacing:".1em",textTransform:"uppercase",color:T.accent,marginBottom:"3px"}}>Saved</div>
+            <div style={{fontFamily:"'Courier Prime',monospace",fontSize:"10px",color:T.muted}}>Your screenplay has been saved.</div>
+          </div>
+        </div>
+      )}
+
+      {showToast && (
+        <div style={{position:"fixed",bottom:"28px",right:"28px",zIndex:3500,background:T.toolbar,border:`1px solid ${T.border}`,borderRadius:"10px",padding:"14px 16px",boxShadow:"0 8px 32px rgba(0,0,0,0.4)",display:"flex",alignItems:"center",gap:"12px",minWidth:"260px"}}>
+          <span style={{fontSize:"16px"}}>💾</span>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:"9px",fontWeight:"700",letterSpacing:".1em",textTransform:"uppercase",color:T.accent,marginBottom:"3px"}}>Save your work</div>
+            <div style={{fontFamily:"'Courier Prime',monospace",fontSize:"10px",color:T.muted}}>Back up to file?</div>
+          </div>
+          <button onClick={async()=>{setToastSaving(true);await saveFountain(false);setToastSaving(false);setShowToast(false);}} style={{background:T.accent,color:"#fff",border:"none",borderRadius:"6px",padding:"6px 11px",cursor:"pointer",fontSize:"9px",fontFamily:"'IBM Plex Mono',monospace",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",flexShrink:0}}>{toastSaving?"…":"Save"}</button>
+          <button onClick={() => setShowToast(false)} style={{background:"transparent",border:"none",color:T.muted,fontSize:"16px",cursor:"pointer",lineHeight:1,padding:"0 2px",flexShrink:0}}>×</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<BambooFountain/>);
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js")
+        .then(r => console.log("SW registered:", r.scope))
+        .catch(e => console.warn("SW registration failed:", e));
+    });
+  }
+</script>
+</body>
+</html>
