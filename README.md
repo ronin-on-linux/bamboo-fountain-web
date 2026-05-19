@@ -6,6 +6,7 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 Future Developments:
 - My next goal is to start a native gtk or qt linux desktop version in development soon, with the aim of replicating and expanding the functionality of Bamboo Fountain, offering a fully featured screenplay writing software for creatives who prefer the open source ecosystem and dislike electron apps. (native app will be published under a separate git repo)
 - Implement dual dialogue fountain compatibility into web app.
+- Page and scene numbers for pdf export.
 
 Current Features:
 - Permissive MIT License
