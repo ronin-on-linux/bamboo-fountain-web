@@ -5,6 +5,7 @@
   "start_url": "/bamboo-fountain-web/",
   "scope": "/bamboo-fountain-web/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay"],
   "background_color": "#111010",
   "theme_color": "#111010",
   "orientation": "any",
