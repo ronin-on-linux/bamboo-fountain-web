@@ -4,7 +4,6 @@
   "description": "A Fountain screenplay editor",
   "start_url": "/bamboo-fountain-web/",
   "scope": "/bamboo-fountain-web/",
-  "display_override": ["window-controls-overlay"]
   "display": "standalone",
   "background_color": "#111010",
   "theme_color": "#111010",
