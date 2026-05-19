@@ -13,7 +13,7 @@ Current Features:
 - 'Take Tour' example file to help new users get started.
 - Open and save locally, with autosave recovery. Ctrl + S and has file save toasts and manual save button.
 - 'Ctrl + Z' and 'Ctrl + Y' undo/redo.
-- Intuitive Title Page and Screenplay editor, with live line formatting, using JS blocks to manage each line format with intuitive line type guessing that out of your way.
+- Intuitive Title Page and Screenplay editor, with live line formatting, using JS blocks to manage each line format with intuitive line type guessing that stays out of your way.
 - Slick and simple UI with dynamic line id tags that reveal line type.
 - Multiple beautiful themes that are popular amongst linux users. Themes persist even if window is closed. Auto-theme detects your OS light or dark mode.
 - Rearrangeable scenes in the left-side outliner (collapsible outliner for better focus).
