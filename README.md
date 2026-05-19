@@ -4,7 +4,7 @@ Bamboo Fountain is an open source screenplay editor that includes all your basic
 bamboo-fountain-web provides a writing experience that is pleasantly simple, allowing you to feel at home with its theme-able UI, while being accessible from anywhere and offline.
 
 Future Developments:
-- My next goal is to start a native gtk or qt linux desktop version in development soon, with the aim of replicating and expanding the functionality of Bamboo Fountain, offering a fully featured screenplay writing software for creatives who prefer the open source ecosystem and dislike electron apps. (native app will be published under a separate git repo)
+- My next goal is to get a native gtk or qt linux desktop version started in development soon, with the aim of replicating and expanding the functionality of Bamboo Fountain, offering a fully featured screenplay writing software for creatives who prefer the open source ecosystem and dislike electron apps. (native app will be published under a separate git repo)
 - Implement dual dialogue fountain compatibility into web app.
 - Page and scene numbers for pdf export.
 
@@ -23,4 +23,5 @@ Current Features:
 - Character name detection. Exising names can be typed on a new line and will auto format to character and queue dialogue upon hitting enter. Adding vo, os, oc short hand will also auto format to their appropriate syntax. (e.g. if there is at least one existing character line for 'JOHN' and you type: 'john vo' on a new line and press Enter, it will result in JOHN (V.O.), indent the line correctly, and queue dialogue).
 - Hosted on GitHub Pages, but has built in PWA compatibility so you can install and use offline.
 
-This was a weekend project that I decided to vibe code since I have no interest in learning javascript at the moment, that allowed me to block out my ideas and get a feel for what I want to do with the native linux desktop app. I will attempt to learn and program the native application with my own skills, but I knew I wanted an online version, and this is the result.
+> [!info] 
+> This was a weekend project that I decided to vibe code since I have no interest in learning javascript at the moment, that allowed me to block out my ideas and get a feel for what I want to do with the native linux desktop app. I will attempt to learn and program the native application with my own skills, but I knew I wanted an online version, and this is the result.
