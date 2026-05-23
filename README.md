@@ -8,7 +8,7 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 - Implement dual dialogue fountain compatibility into web app.
 - Implement screenplay length estimates and action/dialogue statistics.
 - Page and scene numbers for pdf export.
-- Make Theme sub-accents persistant between close and next open.
+- Make sub-theme accents persistant between close and next open.
 
 ## Current Features
 - Permissive MIT License
