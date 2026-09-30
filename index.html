@@ -67,47 +67,43 @@ const { useState, useRef, useEffect, useCallback } = React;
 class HistoryManager {
   constructor() {
     this.stack = [];   // array of { blocks, focusedIdx, caretOffset }
-    this.cursor = -1;  // points to current position in stack
+    this.cursor = -1;
     this.MAX = 200;
-    this._coalesceTimer = null;
-    this._pendingSnapshot = null;
+    this._timer = null;
+    this._pending = null;
+    this._pendingSince = 0;
   }
 
-  // Push immediately (structural ops: block split, merge, type change, etc.)
-  push(snapshot) {
-    this._cancelCoalesce();
-    this._commit(snapshot);
+  static sameDoc(a, b) {
+    if (!a || !b || a.blocks.length !== b.blocks.length) return false;
+    return a.blocks.every((x, i) => x.text === b.blocks[i].text && x.type === b.blocks[i].type);
   }
 
-  // Push with coalescing — rapid text edits merge into one undo step
-  pushCoalesced(snapshot, delayMs = 600) {
-    this._pendingSnapshot = snapshot;
-    clearTimeout(this._coalesceTimer);
-    this._coalesceTimer = setTimeout(() => {
-      if (this._pendingSnapshot) {
-        this._commit(this._pendingSnapshot);
-        this._pendingSnapshot = null;
-      }
-    }, delayMs);
+  // Structural op: commits any pending typing first, then this snapshot.
+  push(snapshot) { this.flush(); this._commit(snapshot); }
+
+  // Typing: rapid edits merge into one step (600ms pause, or 3s max span).
+  pushCoalesced(snapshot, delayMs = 600, maxWaitMs = 3000) {
+    if (this._pending && this._pending.focusedIdx !== snapshot.focusedIdx) this.flush();
+    if (!this._pending) this._pendingSince = Date.now();
+    this._pending = snapshot;
+    clearTimeout(this._timer);
+    const wait = Math.max(0, Math.min(delayMs, maxWaitMs - (Date.now() - this._pendingSince)));
+    this._timer = setTimeout(() => this.flush(), wait);
   }
 
-  // Commit a coalesced edit now (e.g. before a structural op)
   flush() {
-    if (this._pendingSnapshot) {
-      this._cancelCoalesce();
-      this._commit(this._pendingSnapshot);
-      this._pendingSnapshot = null;
-    }
-  }
-
-  _cancelCoalesce() {
-    clearTimeout(this._coalesceTimer);
-    this._coalesceTimer = null;
+    clearTimeout(this._timer); this._timer = null;
+    if (this._pending) { const p = this._pending; this._pending = null; this._commit(p); }
   }
 
   _commit(snapshot) {
-    // Drop any redo future
-    this.stack = this.stack.slice(0, this.cursor + 1);
+    // Skip no-op steps (identical document to the current step)
+    if (HistoryManager.sameDoc(this.current(), snapshot)) {
+      if (this.stack[this.cursor]) this.stack[this.cursor] = snapshot; // refresh caret
+      return;
+    }
+    this.stack = this.stack.slice(0, this.cursor + 1); // drop redo future
     this.stack.push(snapshot);
     if (this.stack.length > this.MAX) this.stack.shift();
     this.cursor = this.stack.length - 1;
@@ -116,20 +112,10 @@ class HistoryManager {
   canUndo() { return this.cursor > 0; }
   canRedo() { return this.cursor < this.stack.length - 1; }
 
-  undo() {
-    this.flush();
-    if (!this.canUndo()) return null;
-    this.cursor--;
-    return this.stack[this.cursor];
-  }
+  undo() { this.flush(); if (!this.canUndo()) return null; return this.stack[--this.cursor]; }
+  // flush first: typing after an undo discards the redo future instead of letting a stale redo clobber it
+  redo() { this.flush(); if (!this.canRedo()) return null; return this.stack[++this.cursor]; }
 
-  redo() {
-    if (!this.canRedo()) return null;
-    this.cursor++;
-    return this.stack[this.cursor];
-  }
-
-  // Peek at current snapshot (for comparison)
   current() { return this.stack[this.cursor] ?? null; }
 }
 
@@ -175,7 +161,7 @@ const ACCENT_OPTIONS = {
     { name:"Aurora G", accent:"#a3be8c", characterColor:"#8fbcbb", sceneColor:"#a3be8c", transitionColor:"#ebcb8b", lyricColor:"#88c0d0" },
     { name:"Aurora Y", accent:"#ebcb8b", characterColor:"#88c0d0", sceneColor:"#ebcb8b", transitionColor:"#bf616a", lyricColor:"#a3be8c" },
     { name:"Aurora R", accent:"#bf616a", characterColor:"#d08770", sceneColor:"#bf616a", transitionColor:"#ebcb8b", lyricColor:"#a3be8c" },
-    { name:"Aurora P", accent:"#b48ead", characterColor:"#88c0d0", sceneColor:"#b48ead", transitionColor:"#ebcb8b", lyricColor:"#a3be8c" },
+    { name:"Aurora P", accent:"#b48ead", characterColor:"#88c0d0", sceneColor:"#b48ead", transitioJEFFnColor:"#ebcb8b", lyricColor:"#a3be8c" },
   ],
 };
 
@@ -226,14 +212,30 @@ const uid = () => `b${++_uid}`;
 const makeBlock = (text="", type="action") => ({ id:uid(), text, type, manual:false });
 
 // ─── CARET HELPERS ────────────────────────────────────────────────────────────
+function textLen(node) {
+  if (node.nodeType === Node.TEXT_NODE) return node.length;
+  if (node.nodeName === "BR") return 1;
+  let n = 0; for (const c of node.childNodes) n += textLen(c); return n;
+}
+
 function getCaretOffset(el) {
   const sel = window.getSelection();
   if (!sel || !sel.rangeCount) return 0;
-  const range = sel.getRangeAt(0);
-  const pre = range.cloneRange();
-  pre.selectNodeContents(el);
-  pre.setEnd(range.endContainer, range.endOffset);
-  return pre.toString().length;
+  const r = sel.getRangeAt(0);
+  if (!el.contains(r.endContainer)) return 0;
+  let count = 0, done = false;
+  (function walk(node) {
+    if (done) return;
+    if (node === r.endContainer) {
+      if (node.nodeType === Node.TEXT_NODE) count += r.endOffset;
+      else for (let k = 0; k < r.endOffset; k++) count += textLen(node.childNodes[k]);
+      done = true; return;
+    }
+    if (node.nodeType === Node.TEXT_NODE) { count += node.length; return; }
+    if (node.nodeName === "BR") { count += 1; return; }
+    for (const c of node.childNodes) { walk(c); if (done) return; }
+  })(el);
+  return count;
 }
 
 function setCaretOffset(el, offset) {
@@ -241,20 +243,17 @@ function setCaretOffset(el, offset) {
   el.focus();
   const sel = window.getSelection();
   const range = document.createRange();
-  let charCount = 0, found = false;
-  function walk(node) {
+  let count = 0, found = false;
+  (function walk(node) {
     if (found) return;
     if (node.nodeType === Node.TEXT_NODE) {
-      const len = node.textContent.length;
-      if (charCount + len >= offset) {
-        range.setStart(node, offset - charCount);
-        range.collapse(true);
-        found = true;
-      } else { charCount += len; }
-    } else { for (const c of node.childNodes) walk(c); }
-  }
-  walk(el);
-  if (!found) { range.selectNodeContents(el); range.collapse(false); }
+      if (count + node.length >= offset) { range.setStart(node, offset - count); found = true; }
+      else count += node.length;
+    } else if (node.nodeName === "BR") {
+      if (count >= offset) { range.setStartBefore(node); found = true; } else count += 1;
+    } else { for (const c of node.childNodes) { walk(c); if (found) return; } }
+  })(el);
+  if (found) range.collapse(true); else { range.selectNodeContents(el); range.collapse(false); }
   sel.removeAllRanges();
   sel.addRange(range);
 }
@@ -273,8 +272,8 @@ function setCaretEnd(el) {
 function getCaretAtBoundary(el) {
   const sel = window.getSelection();
   if (!sel || !sel.rangeCount) return { atStart:false, atEnd:false };
-  const offset = getCaretOffset(el);
   const len = el.innerText.replace(/\n$/, "").length;
+  const offset = Math.min(getCaretOffset(el), len);
   return { atStart: offset === 0, atEnd: offset >= len };
 }
 
@@ -333,114 +332,175 @@ function fmtSceneNum(n, fmt) {
   }
 }
 
-function blocksToFountain(blocks, showNums, numFmt, sceneNumMap) {
-  const parts = [];
-  const titleBlocks = blocks.filter(b => isTitleType(b.type));
-  if (titleBlocks.length) {
-    titleBlocks.forEach(b => {
-      const key = TITLE_FOUNTAIN_KEY[b.type] || b.type;
-      parts.push(`${key}: ${b.text}`);
-    });
-    parts.push("");
+// ── shared syntax helpers
+const SCENE_RE        = /^(INT|EXT|EST|INT\.\/EXT|INT\/EXT|I\/E)[\. ]/i;
+const SCENE_RE_STRICT = /^(INT|EXT|EST|INT\.\/EXT|INT\/EXT|I\/E)[\. ]/;
+const SCENE_NUM_RE    = /\s*#[^#]+#\s*$/;
+const isTransitionLine = t => /^[A-Z][A-Z ]*TO:$/.test(t) || /^(fade (in|out|to black)|smash cut|match cut):$/i.test(t);
+const isForcedScene    = t => /^\.(?!\.)\S/.test(t);
+
+// Character cue: no lowercase in the name (extension/^ may differ), has a letter, not a colon-ended label
+function parseCharacterCue(t) {
+  const core = t.replace(/\s*\^$/, "");
+  const name = core.replace(/\s*\([^)]*\)\s*$/, "").trim();
+  if (!name || /^[!@#~=.>\[\/]/.test(name) || /:$/.test(name)) return null;
+  if (name !== name.toUpperCase() || name === name.toLowerCase()) return null;
+  return { name };
+}
+
+// Whole-line emphasis: _**TEXT**_, **TEXT**, *TEXT*, ***TEXT***, _TEXT_ (any nesting)
+function emphasisInfo(text) {
+  let t = (text || "").trim(), bold = false, italic = false, underline = false, m;
+  for (let g = 0; g < 6; g++) {
+    if      ((m = t.match(/^\*\*\*((?:(?!\*).)+)\*\*\*$/)))   { bold = italic = true; t = m[1]; }
+    else if ((m = t.match(/^\*\*((?:(?!\*\*).)+)\*\*$/)))     { bold = true; t = m[1]; }
+    else if ((m = t.match(/^\*((?:(?!\*).)+)\*$/)))           { italic = true; t = m[1]; }
+    else if ((m = t.match(/^_((?:(?!_).)+)_$/)))              { underline = true; t = m[1]; }
+    else break;
+    t = t.trim();
   }
-  const dialogueTypes = new Set(["dialogue","parenthetical"]);
-  const bodyBlocks = blocks.filter(b => isBodyType(b.type));
-  bodyBlocks.forEach((b, bi) => {
-    const origIdx = blocks.indexOf(b);
-    const num = showNums && sceneNumMap[origIdx] != null ? ` #${fmtSceneNum(sceneNumMap[origIdx], numFmt)}#` : "";
-    const nextBlock = bodyBlocks[bi + 1];
-    switch(b.type) {
-      case "scene-heading": parts.push(`\n${b.text.toUpperCase()}${num}\n`); break;
-      case "character":     parts.push(`\n${b.text.toUpperCase()}`); break;
-      case "dialogue": {
-        parts.push(b.text);
-        if (!nextBlock || !dialogueTypes.has(nextBlock.type)) parts.push("");
-        break;
+  return { bold, italic, underline, inner: t, any: bold || italic || underline };
+}
+
+const escHtml = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+// Inline Fountain emphasis → HTML (escaped first, so text can never inject markup)
+function inlineHtml(text) {
+  let h = escHtml(text || "");
+  h = h.replace(/\\\*/g, "\u0001").replace(/\\_/g, "\u0002")
+       .replace(/\*\*\*(.+?)\*\*\*/g, "<strong><em>$1</em></strong>")
+       .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+       .replace(/\*(.+?)\*/g, "<em>$1</em>")
+       .replace(/(^|[^\w])_(.+?)_(?=[^\w]|$)/g, "$1<u>$2</u>");
+  return h.replace(/\u0001/g, "*").replace(/\u0002/g, "_").replace(/\n/g, "<br>");
+}
+
+// Would this action text be misread as another element? Then it needs a "!" prefix.
+function needsForceAction(text) {
+  const ls = text.split("\n").map(l => l.trim());
+  return ls.some((l, i) =>
+    /^[!@~>#=]/.test(l) || /^\.(?!\.)/.test(l) || SCENE_RE.test(l) || isTransitionLine(l) ||
+    (i < ls.length - 1 && !!parseCharacterCue(l)));
+}
+
+// ─── FOUNTAIN EXPORT ──────────────────────────────────────────────────────────
+function blocksToFountain(blocks, showNums, numFmt, sceneNumMap) {
+  const title = [];
+  blocks.forEach(b => {
+    if (!isTitleType(b.type) || !(b.text || "").trim()) return;
+    let key = TITLE_FOUNTAIN_KEY[b.type] || b.type, val = b.text.trim();
+    if (b.type === "contact") { const m = val.match(/^(Source|Notes|Copyright|Revision):\s*([\s\S]*)$/i); if (m) { key = m[1]; val = m[2]; } }
+    const ls = val.split("\n");
+    title.push(ls.length > 1 ? `${key}:\n${ls.map(l => "    " + l).join("\n")}` : `${key}: ${val}`);
+  });
+
+  const chunks = []; let mode = null;   // mode: "dlg" | "lyric" | null
+  const add = (txt, newMode, append) => {
+    if (append && chunks.length) chunks[chunks.length - 1] += "\n" + txt; else chunks.push(txt);
+    mode = newMode;
+  };
+  blocks.forEach((b, i) => {
+    if (isTitleType(b.type)) return;
+    if (b.type === "page-break") { add("===", null, false); return; }
+    const raw = b.text || "", t = raw.trim();
+    if (!t) return;
+    switch (b.type) {
+      case "scene-heading": {
+        let h = t.toUpperCase();
+        if (!SCENE_RE.test(h)) h = "." + h.replace(/^\.+/, "");
+        const num = showNums && sceneNumMap[i] != null ? ` #${fmtSceneNum(sceneNumMap[i], numFmt)}#` : "";
+        add(h.replace(SCENE_NUM_RE, "") + num, null, false); break;
       }
-      case "parenthetical": {
-        parts.push(b.text.startsWith("(") ? b.text : `(${b.text})`);
-        if (!nextBlock || !dialogueTypes.has(nextBlock.type)) parts.push("");
-        break;
+      case "character": {
+        add(parseCharacterCue(t) ? t : "@" + t, "dlg", false); break;   // keep mixed case (McCLANE) via forced "@"
       }
-      case "transition":    parts.push(`\n${b.text.toUpperCase()}\n`); break;
-      case "centered":      parts.push(`>${b.text}<`); break;
-      case "lyric":         parts.push(`~${b.text}`); break;
-      case "page-break":    parts.push("==="); break;
-      default:              parts.push(b.text);
+      case "parenthetical": add(t.startsWith("(") ? t : `(${t})`, "dlg", mode === "dlg"); break;
+      case "dialogue":      add(t, "dlg", mode === "dlg"); break;
+      case "transition": {
+        const up = t.toUpperCase();
+        add(isTransitionLine(up) ? up : "> " + up, null, false); break;
+      }
+      case "centered": add(`>${t}<`, null, false); break;
+      case "lyric":    add(`~${t}`, "lyric", mode === "lyric"); break;
+      default:         add(needsForceAction(t) ? "!" + t : t, null, false);
     }
   });
-  return parts.join("\n");
+  const out = [...(title.length ? [title.join("\n")] : []), ...chunks];
+  return out.join("\n\n") + "\n";
 }
 
 // ─── FOUNTAIN PARSER ──────────────────────────────────────────────────────────
 function isFountainTitleKey(line) {
-  return /^(Title|Credit|Author|Draft date|Source|Notes|Copyright|Contact|Revision|Date|Draft)\s*:/i.test(line.trim());
+  return /^\s*(Title|Credit|Authors?|Draft date|Source|Notes|Copyright|Contact|Revision|Date|Draft)\s*:/i.test(line);
 }
 function fountainKeyToBlockType(key) {
   const k = key.trim().toLowerCase().replace(/\s+/g,"");
   if (k==="title") return "title";
   if (k==="credit") return "credit";
-  if (k==="author") return "author";
-  if (k==="date"||k==="draftdate") return "draft-date";
+  if (k==="author"||k==="authors") return "author";
+  if (k==="date"||k==="draftdate"||k==="draft") return "draft-date";
   if (k==="contact") return "contact";
-  return null;
+  return null; // Source / Notes / Copyright / Revision are kept as "Key: value" contact lines
 }
 function parseFountain(text) {
-  const lines = text.split(/\r?\n/);
+  const lines = String(text).replace(/^\uFEFF/, "").split(/\r?\n/);
   const blocks = [];
   let i = 0, foundTitleKey = false;
+
+  // Title page. Values may sit on the same line or on indented lines below the key.
   while (i < lines.length) {
     const line = lines[i];
     if (isFountainTitleKey(line)) {
       foundTitleKey = true;
-      const m = line.match(/^([^:]+):\s*(.*)$/);
-      if (m) {
-        const blockType = fountainKeyToBlockType(m[1]) || "title";
-        let fullVal = m[2].trim(); i++;
-        while (i < lines.length && /^\s+\S/.test(lines[i])) { fullVal += " " + lines[i].trim(); i++; }
-        blocks.push(makeBlock(fullVal, blockType));
-      } else i++;
-    } else if (line.trim() === "" && foundTitleKey) { i++; break; }
-    else if (line.trim() === "" && !foundTitleKey) i++;
+      const m = line.match(/^\s*([^:]+):\s*(.*)$/);
+      const key = m[1].trim(), vals = m[2].trim() ? [m[2].trim()] : [];
+      i++;
+      while (i < lines.length && /^\s+\S/.test(lines[i])) { vals.push(lines[i].trim()); i++; }
+      const val = vals.join("\n");
+      if (val) { const bt = fountainKeyToBlockType(key); blocks.push(bt ? makeBlock(val, bt) : makeBlock(`${key}: ${val}`, "contact")); }
+    } else if (line.trim() === "") { i++; if (foundTitleKey) break; }
     else break;
   }
+
+  const breaksAction = l => /^={3,}$/.test(l) || isForcedScene(l) || /^[~!@>]/.test(l) || emphasisInfo(l).any;
+  const readAction = first => {
+    const acc = [first]; i++;
+    while (i < lines.length && lines[i].trim() !== "") {
+      const l = lines[i].trim(); if (breaksAction(l)) break;
+      acc.push(l); i++;
+    }
+    blocks.push(makeBlock(acc.join("\n"), "action"));
+  };
+
   while (i < lines.length) {
-    const raw = lines[i]; const t = raw.trim();
+    const t = lines[i].trim();
     if (t === "") { i++; continue; }
-    if (/^={3,}$/.test(t))                                        { blocks.push(makeBlock(t,"page-break")); i++; continue; }
-    if (/^\.\w/.test(t))                                          { blocks.push(makeBlock(t.slice(1).toUpperCase(),"scene-heading")); i++; continue; }
-    if (/^(INT|EXT|EST|INT\.\/EXT|INT\/EXT|I\/E)[\. ]/i.test(t)) { blocks.push(makeBlock(t.replace(/ #[^#]+#\s*$/,"").trim(),"scene-heading")); i++; continue; }
-    if (t.startsWith(">") && !t.endsWith("<"))                    { blocks.push(makeBlock(t.slice(1).trim(),"transition")); i++; continue; }
-    if (/^[A-Z][A-Z ]*TO:$/.test(t) || /^(fade (in|out|to black)|smash cut|match cut):$/i.test(t)) { blocks.push(makeBlock(t,"transition")); i++; continue; }
-    if (/^>[^<\n]+<$/.test(t))                                   { blocks.push(makeBlock(t.slice(1,-1).trim(),"centered")); i++; continue; }
-    if (t.startsWith("~"))                                        { blocks.push(makeBlock(t.slice(1).trim(),"lyric")); i++; continue; }
-    if (t.startsWith("!"))                                        { blocks.push(makeBlock(t.slice(1),"action")); i++; continue; }
-    if (t.startsWith("@"))                                        { blocks.push(makeBlock(t.slice(1).trim(),"character")); i++; continue; }
-    if (/^[A-Z][A-Z0-9 _\-'\.]*(\s*\([^)]+\))?$/.test(t) && !/[a-z]/.test(t) && i+1 < lines.length && lines[i+1].trim() !== "") {
-      blocks.push(makeBlock(t,"character")); i++;
+    if (t.startsWith("!"))                { readAction(t.slice(1)); continue; }
+    if (/^={3,}$/.test(t))                { blocks.push(makeBlock(t, "page-break")); i++; continue; }
+    if (isForcedScene(t))                 { blocks.push(makeBlock(t.slice(1).replace(SCENE_NUM_RE, "").trim().toUpperCase(), "scene-heading")); i++; continue; }
+    if (SCENE_RE.test(t))                 { blocks.push(makeBlock(t.replace(SCENE_NUM_RE, "").trim(), "scene-heading")); i++; continue; }
+    if (t.startsWith(">") && !t.endsWith("<")) { blocks.push(makeBlock(t.slice(1).trim(), "transition")); i++; continue; }
+    if (isTransitionLine(t))              { blocks.push(makeBlock(t, "transition")); i++; continue; }
+    if (/^>[^<\n]+<$/.test(t))            { blocks.push(makeBlock(t.slice(1, -1).trim(), "centered")); i++; continue; }
+    if (t.startsWith("~"))                { blocks.push(makeBlock(t.slice(1).trim(), "lyric")); i++; continue; }
+    // Standalone emphasised line, e.g. _**BEGIN MEMORY MONTAGE:**_ — its own element, never glued to neighbours
+    if (emphasisInfo(t).any)              { blocks.push(makeBlock(t, "action")); i++; continue; }
+
+    const forced = t.startsWith("@");
+    const cue = forced ? { name: t.slice(1).trim() } : parseCharacterCue(t);
+    if (cue && (forced || (i + 1 < lines.length && lines[i + 1].trim() !== ""))) {
+      blocks.push(makeBlock(forced ? t.slice(1).trim() : t, "character")); i++;
       while (i < lines.length) {
-        const dl = lines[i].trim();
-        if (dl === "") { i++; break; }
-        if (/^(INT|EXT|EST|INT\.\/EXT|INT\/EXT|I\/E)[\. ]/i.test(dl)) break;
-        if (/^={3,}$/.test(dl)) break;
-        if (/^\.\w/.test(dl)) break;
-        if (/^[A-Z][A-Z ]*TO:$/.test(dl) || /^(fade (in|out|to black)|smash cut|match cut):$/i.test(dl)) break;
-        if (/^>[^<\n]+<$/.test(dl)) break;
-        if (dl.startsWith("~")) break;
-        if (dl.startsWith("!")) break;
-        if (dl.startsWith("@")) break;
-        if (dl.startsWith(">") && !dl.endsWith("<")) break;
-        if (/^\(.*\)$/.test(dl)) blocks.push(makeBlock(dl,"parenthetical"));
-        else blocks.push(makeBlock(dl,"dialogue"));
+        const raw = lines[i], dl = raw.trim();
+        if (dl === "") { i++; if (raw === "  ") continue; break; }   // "  " keeps dialogue going across a blank
+        if (/^={3,}$/.test(dl) || isForcedScene(dl) || SCENE_RE_STRICT.test(dl) || /^[A-Z][A-Z ]*TO:$/.test(dl) || /^[~!@>]/.test(dl)) break;
+        blocks.push(makeBlock(dl, /^\(.*\)$/.test(dl) ? "parenthetical" : "dialogue"));
         i++;
       }
       continue;
     }
-    const actionLines = [t]; i++;
-    while (i < lines.length && lines[i].trim() !== "") { actionLines.push(lines[i].trim()); i++; }
-    blocks.push(makeBlock(actionLines.join("\n"),"action"));
+    readAction(t);
   }
-  return { blocks: blocks.length ? blocks : [makeBlock("","action")] };
+  return { blocks: blocks.length ? blocks : [makeBlock("", "action")] };
 }
 
 // ─── DOWNLOAD ─────────────────────────────────────────────────────────────────
@@ -487,7 +547,7 @@ function buildPrintHtml(blocks, wm, wmOpacity, showNums, numFmt, sceneNumMap, ti
   const bottomTypes = ["draft-date","contact"];
   const bottomBlocks = titleBlocks.filter(b => bottomTypes.includes(b.type));
   function renderTitleSpan(b) {
-    let txt = b.text || "";
+    let txt = inlineHtml(b.text);
     if (b.type === "title") {
       if (titleStyle?.bold && titleStyle?.underline) txt = `<strong><u>${txt}</u></strong>`;
       else if (titleStyle?.bold) txt = `<strong>${txt}</strong>`;
@@ -496,7 +556,7 @@ function buildPrintHtml(blocks, wm, wmOpacity, showNums, numFmt, sceneNumMap, ti
     return `<span>${txt}</span>`;
   }
   const centreHtml = centreBlocks.map(renderTitleSpan).join("");
-  const bottomHtml = bottomBlocks.map(b => `<div>${b.text||""}</div>`).join("");
+  const bottomHtml = bottomBlocks.map(b => `<div>${inlineHtml(b.text)}</div>`).join("");
   const hasTitlePage = titleBlocks.length > 0;
   const titlePageHtml = hasTitlePage
     ? `<div class="title-page"><div class="title-block">${centreHtml}</div><div class="bottom-block">${bottomHtml}</div></div>`
@@ -511,7 +571,7 @@ function buildPrintHtml(blocks, wm, wmOpacity, showNums, numFmt, sceneNumMap, ti
     const cls = b.type.replace(/[^a-z-]/g,"");
     const sn = showNums && sceneNumMap[origIdx] != null ? fmtSceneNum(sceneNumMap[origIdx], numFmt) : null;
     const numHtml = (b.type === "scene-heading" && sn) ? `<span class="scene-num-left">${sn}</span><span class="scene-num-right">${sn}</span>` : "";
-    return `<div class="el ${cls}" style="${bi===0?'margin-top:0;':''}">${numHtml}${b.text||"&nbsp;"}</div>`;
+    return `<div class="el ${cls}" style="${bi===0?'margin-top:0;':''}">${numHtml}${b.text ? inlineHtml(b.text) : "&nbsp;"}</div>`;
   }).join("\n");
   const wmHtml = wm ? `<div class="watermark" style="color:rgba(0,0,0,${wmOpacity/100})">${wm}</div>` : "";
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Screenplay</title><style>${css}</style></head><body>${wmHtml}\n${titlePageHtml}\n${bodyHtml}\n</body></html>`;
@@ -681,6 +741,8 @@ function Block({block, index, focused, sceneNum, showNums, numFmt, T, mobile, on
   const isTitleZone = isTitleType(block.type);
   const lastWritten = useRef(null);
   const elRef = useRef(null);
+  const emph = emphasisInfo(block.text);
+  const emphStyle = emph.any ? {fontWeight:emph.bold?"700":undefined, fontStyle:emph.italic?"italic":undefined, textDecoration:emph.underline?"underline":undefined} : {};
 
   useEffect(() => {
     const el = elRef.current; if (!el) return;
@@ -732,7 +794,7 @@ function Block({block, index, focused, sceneNum, showNums, numFmt, T, mobile, on
           const text = e.clipboardData.getData("text/plain");
           document.execCommand("insertText", false, text);
         }}
-        style={{...style, outline:"none", border:"none", background:"transparent"}}
+        style={{...style, ...emphStyle, outline:"none", border:"none", background:"transparent"}}
       />
     </div>
   );
@@ -884,6 +946,7 @@ function BambooFountain() {
     // Give blocks fresh ids so React re-keys the DOM correctly after undo
     const restored = snap.blocks.map(b => ({...b, id: uid()}));
     divRefs.current = {};
+    blocksRef.current = restored;
     setBlocks(restored);
     setFocusedIdx(snap.focusedIdx);
     requestAnimationFrame(() => {
@@ -904,14 +967,15 @@ function BambooFountain() {
   // ── Global Ctrl+Z / Ctrl+Shift+Z handler
   useEffect(() => {
     function handleUndoRedo(e) {
-      const isUndo = (e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey;
-      const isRedo = (e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey));
+      // e.key is "Z" (uppercase) while Shift is held, so it must be lower-cased or Ctrl+Shift+Z never matches
+      const k = (e.key || "").toLowerCase();
+      const mod = (e.ctrlKey || e.metaKey) && !e.altKey;
+      const isUndo = mod && k === "z" && !e.shiftKey;
+      const isRedo = mod && (k === "y" || (k === "z" && e.shiftKey));
       if (!isUndo && !isRedo) return;
 
-      // Only intercept when focus is inside our editor area (not a plain <input>)
-      const active = document.activeElement;
-      const inEditor = active?.isContentEditable || active?.tagName === "INPUT" || active?.tagName === "TEXTAREA";
-      if (!inEditor) return;
+      // Only intercept inside the editor; inputs (e.g. watermark box) keep native undo
+      if (!document.activeElement?.isContentEditable) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -1217,10 +1281,13 @@ function BambooFountain() {
     requestAnimationFrame(() => { const b=blocksRef.current[index]; const el=b&&divRefs.current[b.id]; if(el) setCaretEnd(el); });
   }
 
-  // ── handleInput: coalesced text change
+  // Moving between blocks ends the current typing burst
+  function handleFocus(index) { history.current.flush(); setFocusedIdx(index); }
+
+  // ── handleInput: coalesced text change (history push happens outside the state updater)
   function handleInput(index, text) {
-    setBlocks(prev => {
-      const nb = [...prev]; const old = nb[index]; const prevBlock = index > 0 ? nb[index-1] : null;
+    {
+      const nb = [...blocksRef.current]; const old = nb[index]; if (!old) return; const prevBlock = index > 0 ? nb[index-1] : null;
       if (isTitleType(old.type)) { nb[index] = {...old, text}; }
       else {
         const autoTriggers = [/^(INT|EXT|EST|INT\.\/EXT|INT\/EXT|I\/E)[\. ]/i,/^\.\w/,/^!/,/^~/,/^>/,/^={3,}$/,/^[A-Z][A-Z ]*TO:$/];
@@ -1229,12 +1296,12 @@ function BambooFountain() {
         const type = isManual ? old.type : detectBodyType(text, prevBlock, old.type);
         nb[index] = {...old, text, type, manual:isManual};
       }
-      // Coalesced push — merges rapid keystrokes into one undo step
       const el = divRefs.current[nb[index].id];
       const caretOffset = el && document.activeElement === el ? getCaretOffset(el) : text.length;
+      blocksRef.current = nb;
+      setBlocks(nb);
       history.current.pushCoalesced(makeSnapshot(nb, index, caretOffset));
-      return nb;
-    });
+    }
   }
 
   function handleKeyDown(e, index) {
@@ -1246,7 +1313,7 @@ function BambooFountain() {
     const group = zone === "title" ? TITLE_TYPES : BODY_TYPES;
 
     // Undo/redo are handled globally in capture phase — skip here
-    if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "y")) return;
+    if ((e.ctrlKey || e.metaKey) && ["z","y"].includes((e.key || "").toLowerCase())) return;
 
     if (e.key === "Tab") {
       e.preventDefault();
@@ -1283,14 +1350,24 @@ function BambooFountain() {
         return;
       }
 
+      // Enter at the very start of a non-empty block: open a blank line above instead of shoving the text into another type
+      if (before === "" && after !== "") {
+        const nb = [...blocks]; nb.splice(index, 0, makeBlock("", "action"));
+        setBlocks(nb);
+        history.current.push(makeSnapshot(nb, index+1, 0));
+        requestAnimationFrame(() => focusBlock(index+1, "start"));
+        return;
+      }
+      const atEndOfText = curOffset >= fullText.length;
+
       const TRANSITION_PATTERNS = [/^cut to:?\s*$/i,/^fade to:?\s*$/i,/^fade to black:?\s*$/i,/^fade out:?\s*$/i,/^fade in:?\s*$/i,/^smash cut:?\s*$/i,/^match cut:?\s*$/i,/^jump cut:?\s*$/i,/^dissolve to:?\s*$/i,/^iris in:?\s*$/i,/^iris out:?\s*$/i];
       const SUFFIX_MAP = {"vo":"(V.O.)","os":"(O.S.)","oc":"(O.C.)","of":"(O.F.)","cont":"(CONT'D)","contd":"(CONT'D)"};
       const trimmed = fullText.trim();
       const suffixMatch = trimmed.match(/^(.+?)\s+(vo|os|oc|of|contd?)\s*$/i);
       const baseName = suffixMatch ? suffixMatch[1].trim().toUpperCase() : trimmed.toUpperCase();
       const suffix = suffixMatch ? SUFFIX_MAP[suffixMatch[2].toLowerCase()] : null;
-      const isKnownCharacter = block.type === "action" && characterRegistry.has(baseName);
-      const isKnownTransition = block.type === "action" && TRANSITION_PATTERNS.some(r => r.test(trimmed));
+      const isKnownCharacter = atEndOfText && block.type === "action" && characterRegistry.has(baseName);
+      const isKnownTransition = atEndOfText && block.type === "action" && TRANSITION_PATTERNS.some(r => r.test(trimmed));
 
       if (isKnownTransition) {
         const transText = trimmed.toUpperCase().replace(/:?\s*$/, ":");
@@ -1326,6 +1403,7 @@ function BambooFountain() {
       else if (block.type === "parenthetical") newType = "dialogue";
       else if (block.type === "transition")    newType = "scene-heading";
 
+      if (after !== "" && ["dialogue","action","parenthetical","lyric","centered"].includes(block.type)) newType = block.type; // mid-split keeps its type
       const newBlock = makeBlock(after, newType);
       const newBlocks = [...blocks];
       newBlocks[index] = {...newBlocks[index], text:before};
@@ -1345,10 +1423,9 @@ function BambooFountain() {
       const prevEl = divRefs.current[prevBlock.id];
       const prevText = prevEl?.innerText.replace(/\n$/,"") || prevBlock.text;
       const curText = el?.innerText.replace(/\n$/,"") || block.text;
-      const joinLen = prevText.length;
-      const newBlocks = [...blocks];
-      newBlocks[index-1] = {...newBlocks[index-1], text:prevText+curText};
-      newBlocks.splice(index, 1);
+      let joinLen, newBlocks;
+      if (prevText === "") { joinLen = 0; newBlocks = blocks.filter((_, k) => k !== index-1); }   // empty line above: drop it, keep this block's type
+      else { joinLen = prevText.length; newBlocks = [...blocks]; newBlocks[index-1] = {...newBlocks[index-1], text:prevText+curText}; newBlocks.splice(index, 1); }
       setBlocks(newBlocks);
       history.current.push(makeSnapshot(newBlocks, index-1, joinLen));
       requestAnimationFrame(() => {
@@ -1367,11 +1444,12 @@ function BambooFountain() {
       const curText = el?.innerText.replace(/\n$/,"") || block.text;
       const nextEl = divRefs.current[nextBlock.id];
       const nextText = nextEl?.innerText.replace(/\n$/,"") || nextBlock.text;
-      const newBlocks = [...blocks];
-      newBlocks[index] = {...newBlocks[index], text:curText+nextText};
-      newBlocks.splice(index+1, 1);
+      let newBlocks;
+      if (curText === "") { newBlocks = blocks.filter((_, k) => k !== index); }                  // empty current line: keep the next block as-is
+      else { newBlocks = [...blocks]; newBlocks[index] = {...newBlocks[index], text:curText+nextText}; newBlocks.splice(index+1, 1); }
       setBlocks(newBlocks);
       history.current.push(makeSnapshot(newBlocks, index, curText.length));
+      requestAnimationFrame(() => { const b = blocksRef.current[index]; const e2 = b && divRefs.current[b.id]; if (e2) setCaretOffset(e2, curText.length); });
       return;
     }
 
@@ -1402,21 +1480,21 @@ function BambooFountain() {
 
   function handleReorderScenes(fromIdx, toIdx) {
     history.current.flush();
-    setBlocks(prev => {
-      const firstScene = prev.findIndex(b => b.type === "scene-heading"); if (firstScene === -1) return prev;
-      const pinned = prev.slice(0, firstScene);
-      const chunks = []; let cur = null;
-      for (let i = firstScene; i < prev.length; i++) {
-        if (prev[i].type === "scene-heading") { if (cur) chunks.push(cur); cur = [prev[i]]; }
-        else if (cur) cur.push(prev[i]);
-      }
-      if (cur) chunks.push(cur);
-      const r = [...chunks]; const [moved] = r.splice(fromIdx, 1); r.splice(toIdx, 0, moved);
-      const newBlocks = [...pinned, ...r.flat()];
-      history.current.push(makeSnapshot(newBlocks, 0, 0));
-      return newBlocks;
-    });
+    const prev = blocksRef.current;
+    const firstScene = prev.findIndex(b => b.type === "scene-heading"); if (firstScene === -1) return;
+    const pinned = prev.slice(0, firstScene);
+    const chunks = []; let cur = null;
+    for (let i = firstScene; i < prev.length; i++) {
+      if (prev[i].type === "scene-heading") { if (cur) chunks.push(cur); cur = [prev[i]]; }
+      else if (cur) cur.push(prev[i]);
+    }
+    if (cur) chunks.push(cur);
+    const r = [...chunks]; const [moved] = r.splice(fromIdx, 1); r.splice(toIdx, 0, moved);
+    const newBlocks = [...pinned, ...r.flat()];
+    blocksRef.current = newBlocks;
+    setBlocks(newBlocks);
     setFocusedIdx(0);
+    history.current.push(makeSnapshot(newBlocks, 0, 0));
   }
 
   const numFmts = [{v:"1",l:"1, 2, 3"},{v:"101",l:"101, 102"},{v:"A1",l:"A1, A2"}];
@@ -1615,7 +1693,7 @@ function BambooFountain() {
                     block={block} index={index} focused={focusedIdx===index}
                     sceneNum={sceneNumMap[index]||null} showNums={showNums} numFmt={numFmt}
                     T={T} mobile={mobile}
-                    onInput={handleInput} onFocus={setFocusedIdx} onKeyDown={handleKeyDown}
+                    onInput={handleInput} onFocus={handleFocus} onKeyDown={handleKeyDown}
                     divRef={el => { if (el) divRefs.current[block.id] = el; }}
                   />
                 </React.Fragment>
