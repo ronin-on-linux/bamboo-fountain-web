@@ -29,4 +29,4 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 - Hosted on GitHub Pages, but has built in PWA compatibility so you can install and use offline.
 
 > [!NOTE] 
-> This was a weekend project that I decided to vibe code since I have no interest in learning javascript at the moment, that allowed me to block out my ideas and get a feel for what I want to do with the native linux desktop app.
+> This is a project that I decided to vibe code since I have no interest in learning javascript at the moment, that allowed me to block out my ideas and get a feel for what I want to do with the native Linux desktop app. My goal is to code the desktop version from scratch and I am using this vibe-coding method to experiment with different methods and ideas prior to settling down and writing my own code for the native desktop app for Linux and Windows.
