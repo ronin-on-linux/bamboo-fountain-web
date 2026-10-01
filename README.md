@@ -1,7 +1,7 @@
 # bamboo-fountain-web
 Bamboo Fountain is an open source screenplay editor that includes all your basic script writing needs, made by ronin-on-linux, using components from Fountain.
 
-bamboo-fountain-web provides a writing experience that is pleasantly simple, allowing you to feel at home with its theme-able UI, while being accessible from anywhere and offline.
+bamboo-fountain-web provides a writing experience that is pleasantly simple, allowing you to feel at home with its theme-able UI, while being accessible from anywhere and offline. No server access, no cloud, no AI assistant features. Just focused screenwriting.
 
 <img width="1201" height="898" alt="Document" src="https://github.com/user-attachments/assets/4de3bca1-af6a-44b6-8654-3b096084a45c" />
 
@@ -12,6 +12,7 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 - Implement screenplay length estimates and action/dialogue statistics.
 - Page and scene numbers for pdf export.
 - Make sub-theme accents persistant between close and next open.
+- Eventually integrate note encryption of some sort to keep users data safe.
 
 ## Current Features
 - Permissive MIT License
@@ -29,4 +30,4 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 - Hosted on GitHub Pages, but has built in PWA compatibility so you can install and use offline.
 
 > [!NOTE] 
-> This is a project that I decided to vibe code since I have no interest in learning javascript at the moment, that allowed me to block out my ideas and get a feel for what I want to do with the native Linux desktop app. My goal is to code the desktop version from scratch and I am using this vibe-coding method to experiment with different methods and ideas prior to settling down and writing my own code for the native desktop app for Linux and Windows.
+> This is a project that I decided to vibe code since I have no interest in learning javascript and react at the moment, that allowed me to block out my ideas and get a feel for what I want to do with the native Linux desktop app. My goal is to code the desktop version from scratch and I am using this vibe-coding method to experiment with different methods and ideas as well as receive direction and feedback from users prior to settling down and writing my own code for the native desktop app for Linux and Windows. I try to review the code myself to make sure that I know what the code is generally doing and that nothing glaringly problematic is published. Because I am not the most prolific coder, the final native desktop version may not look exactly like the react/js version, so I will probably let this live on the PWA web app world even after I publish the desktop version so that mac users can still access the tool. (I have ZERO experience in xcode or swift and don't own a mac.)
