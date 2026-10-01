@@ -6,13 +6,13 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 <img width="1201" height="898" alt="Document" src="https://github.com/user-attachments/assets/4de3bca1-af6a-44b6-8654-3b096084a45c" />
 
 ## Future Developments
-- My next goal is to get a native gtk or qt linux desktop version started in development soon, with the aim of replicating and expanding the functionality of Bamboo Fountain, offering a fully featured screenplay writing software for creatives who prefer the open source ecosystem and dislike electron apps. (native app will be published under a separate git repo)
-- Implement markdown mode and text selection outside of individual text blocks.
-- Implement dual dialogue fountain compatibility into web app.
-- Implement screenplay length estimates and action/dialogue statistics.
-- Page and scene numbers for pdf export.
-- Make sub-theme accents persistant between close and next open.
-- Eventually integrate note encryption of some sort to keep users data safe.
+- [ ] My next goal is to get a native gtk or qt linux desktop version started in development soon, with the aim of replicating and expanding the functionality of Bamboo Fountain, offering a fully featured screenplay writing software for creatives who prefer the open source ecosystem and dislike electron apps. (native app will be published under a separate git repo)
+- [ ] Implement markdown mode and text selection outside of individual text blocks.
+- [ ] Implement dual dialogue fountain compatibility into web app.
+- [ ] Implement screenplay length estimates and action/dialogue statistics.
+- [ ] Page and scene numbers for pdf export.
+- [ ] Make sub-theme accents persistant between close and next open.
+- [ ] Eventually integrate note encryption of some sort to keep users data safe.
 
 ## Current Features
 - Permissive MIT License
