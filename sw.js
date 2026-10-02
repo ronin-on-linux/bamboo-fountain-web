@@ -1,61 +1,107 @@
-const CACHE = "bamboo-v1";
-const ASSETS = [
-  "/bamboo-fountain-web/",
-  "/bamboo-fountain-web/index.html",
-  "/bamboo-fountain-web/manifest.json",
-  "/bamboo-fountain-web/icons/icon-192.png",
-  "/bamboo-fountain-web/icons/icon-512.png",
-  "https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;700&display=swap",
-  "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js",
-  "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js",
-  "https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"
+/* Bamboo Fountain service worker
+ * - Precaches the app shell + CodeMirror modules (from esm.sh) so the editor works offline.
+ * - Bump VERSION whenever index.html changes to roll out an update. */
+const VERSION = 'v1';
+const SHELL_CACHE = 'bf-shell-' + VERSION;
+const CDN_CACHE = 'bf-cdn-v1'; // CodeMirror URLs are version-pinned, so this cache can persist across app versions
+
+const SHELL = [
+  './',
+  './index.html',
+  './manifest.json',
+  './icons/icon-192.png',
+  './icons/icon-512.png'
 ];
 
-self.addEventListener("install", e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS))
-  );
-  self.skipWaiting();
+// Must match the importmap in index.html
+const CDN_ENTRIES = [
+  'https://esm.sh/@codemirror/state@6.4.1',
+  'https://esm.sh/@codemirror/view@6.26.3?deps=@codemirror/state@6.4.1',
+  'https://esm.sh/@codemirror/commands@6.5.0?deps=@codemirror/state@6.4.1,@codemirror/view@6.26.3'
+];
+
+// Cache a module and, recursively, every module it imports (esm.sh uses absolute-path imports like "/v135/...")
+async function cacheModuleTree(url, cache, seen = new Set()) {
+  if (seen.has(url) || seen.size > 200) return;
+  seen.add(url);
+  let res = await cache.match(url);
+  if (!res) {
+    res = await fetch(url, { mode: 'cors' });
+    if (!res.ok) throw new Error('Failed ' + url);
+    await cache.put(url, res.clone());
+  }
+  const text = await res.clone().text();
+  const re = /(?:from|import)\s*["'](\/[^"']+)["']/g;
+  let m;
+  const deps = [];
+  while ((m = re.exec(text))) deps.push(new URL(m[1], url).href);
+  await Promise.all(deps.map(d => cacheModuleTree(d, cache, seen)));
+}
+
+self.addEventListener('install', event => {
+  event.waitUntil((async () => {
+    const shell = await caches.open(SHELL_CACHE);
+    await shell.addAll(SHELL);
+    // CDN prefetch is best-effort: a failure here must not block installing the app shell.
+    try {
+      const cdn = await caches.open(CDN_CACHE);
+      await Promise.all(CDN_ENTRIES.map(u => cacheModuleTree(u, cdn)));
+    } catch (e) { /* runtime caching below will fill the gaps */ }
+    await self.skipWaiting();
+  })());
 });
 
-self.addEventListener("activate", e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keep = [SHELL_CACHE, CDN_CACHE];
+    for (const k of await caches.keys()) if (!keep.includes(k)) await caches.delete(k);
+    await self.clients.claim();
+  })());
 });
 
-self.addEventListener("fetch", e => {
-  const url = new URL(e.request.url);
+self.addEventListener('fetch', event => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
 
-  // Network-first for the HTML shell so updates reach users
-  if (url.pathname.endsWith("/") || url.pathname.endsWith(".html")) {
-    e.respondWith(
-      fetch(e.request)
-        .then(res => {
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-          return res;
-        })
-        .catch(() => caches.match(e.request))
-    );
+  // Page navigations: network first (fresh updates), fall back to cached shell when offline.
+  if (req.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        const res = await fetch(req);
+        const cache = await caches.open(SHELL_CACHE);
+        cache.put('./index.html', res.clone());
+        return res;
+      } catch (e) {
+        return (await caches.match('./index.html')) || (await caches.match('./')) || Response.error();
+      }
+    })());
     return;
   }
 
-  // Cache-first for everything else (CDN libs, fonts, icons)
-  e.respondWith(
-    caches.match(e.request).then(hit => {
+  // CodeMirror modules from esm.sh: cache first, add anything new at runtime.
+  if (url.hostname === 'esm.sh') {
+    event.respondWith((async () => {
+      const cache = await caches.open(CDN_CACHE);
+      const hit = await cache.match(req);
       if (hit) return hit;
-      return fetch(e.request).then(res => {
-        // Only cache valid same-origin or CDN responses
-        if (res && res.status === 200 && (res.type === "basic" || res.type === "cors")) {
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-        }
+      const res = await fetch(req);
+      if (res.ok) cache.put(req, res.clone());
+      return res;
+    })());
+    return;
+  }
+
+  // Other same-origin assets: cache first, refresh in background.
+  if (url.origin === location.origin) {
+    event.respondWith((async () => {
+      const cache = await caches.open(SHELL_CACHE);
+      const hit = await cache.match(req);
+      const refresh = fetch(req).then(res => {
+        if (res.ok) cache.put(req, res.clone());
         return res;
-      });
-    })
-  );
+      }).catch(() => null);
+      return hit || (await refresh) || Response.error();
+    })());
+  }
 });
