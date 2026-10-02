@@ -490,11 +490,31 @@ $("new").onclick=async()=>{
   loadDoc(defaultDoc());setName("untitled.fountain");
 };
 
+// Browsers only allow a file picker right after a click/tap. After the unsaved-changes dialog (or an earlier picker) that
+// permission can be used up, so on SecurityError/NotAllowedError ask for one fresh click and retry.
+function freshClick(label){
+  return new Promise(res=>{
+    const wrap=document.createElement("div");
+    wrap.style.cssText="position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:#0008";
+    wrap.innerHTML=`<div style="background:var(--bar);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:18px 20px;max-width:340px;font:13px/1.45 system-ui,sans-serif;text-align:center"><div style="margin-bottom:14px">The browser needs one more click to show the file dialog.</div><div style="display:flex;gap:8px;justify-content:center"><button data-r="no" style="padding:6px 14px;border:1px solid var(--bd);border-radius:5px;background:var(--bg);color:var(--tx);font:inherit;cursor:pointer">Cancel</button><button data-r="go" style="padding:6px 14px;border:1px solid var(--ac);border-radius:5px;background:var(--ac);color:var(--bg);font:inherit;cursor:pointer"></button></div></div>`;
+    wrap.querySelector('[data-r="go"]').textContent=label;
+    wrap.onclick=e=>{const r=e.target.dataset&&e.target.dataset.r;if(r){wrap.remove();res(r==="go")}};
+    document.body.appendChild(wrap);wrap.querySelector('[data-r="go"]').focus();
+  });
+}
+async function pick(fn,label){
+  try{return await fn()}
+  catch(e){
+    if(e.name!=="SecurityError"&&e.name!=="NotAllowedError")throw e;
+    if(!await freshClick(label)){const a=new Error("cancelled");a.name="AbortError";throw a}
+    return await fn();   // runs straight from the button click, so activation is fresh
+  }
+}
 async function openFile(){
   if(!await guard("opening another file"))return;     // save/discard prompt comes first, then the file picker
   if(!FSA)return $("file").click();
   let h;
-  try{[h]=await showOpenFilePicker({types:FT,multiple:false})}
+  try{[h]=await pick(()=>showOpenFilePicker({types:FT,multiple:false}),"Choose file…")}
   catch(e){if(e.name!=="AbortError")failed("open the file",e);return}
   try{const text=norm(await (await h.getFile()).text());
     loadDoc(text,0);setHandle(h);setName(h.name)}        // assign handle AFTER loadDoc (it clears it)
@@ -510,7 +530,7 @@ async function saveAs(){
     download(txt,name);setDirty(false);setName(name);SS.file="Downloaded "+hms();paint();return true;
   }
   try{
-    const h=await showSaveFilePicker({suggestedName:fileName,types:FT,...(handle?{startIn:handle}:{})});
+    const h=await pick(()=>showSaveFilePicker({suggestedName:fileName,types:FT,...(handle?{startIn:handle}:{})}),"Choose location…");
     SS.file="Saving…";paint();await writeTo(h,txt);setHandle(h);setDirty(false);setName(h.name);flashSaved();return true;
   }catch(e){if(e.name!=="AbortError"){SS.file="";paint();failed("save the file",e)}return false}
 }
