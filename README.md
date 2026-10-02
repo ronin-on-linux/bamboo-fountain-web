@@ -14,7 +14,7 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 - [x] Make sub-theme accents persistant between close and next open.
 - [ ] Eventually integrate note encryption of some sort to keep users data safe.
 
-> [!BUG] save/open online vs PWA
+> [!WARNING] save/open online vs PWA
 > Save/open window dialogue is broken on the website verison. Installing the PWA fixes this issue. Use PWA instead of in browser for the moment.
 
 
