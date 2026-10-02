@@ -1,26 +1,44 @@
 {
+  "id": "./",
   "name": "Bamboo Fountain",
   "short_name": "Bamboo",
-  "description": "A Fountain screenplay editor",
-  "start_url": "/bamboo-fountain-web/",
-  "scope": "/bamboo-fountain-web/",
+  "description": "Live Fountain screenplay editor that works offline.",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "display_override": ["window-controls-overlay"],
-  "background_color": "#111010",
-  "theme_color": "#111010",
   "orientation": "any",
+  "background_color": "#111010",
+  "theme_color": "#0e0e0e",
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
-  ]
+  ],
+  "file_handlers": [
+    {
+      "action": "./index.html",
+      "accept": {
+        "text/plain": [
+          ".fountain",
+          ".txt"
+        ]
+      }
+    }
+  ],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
 }
