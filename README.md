@@ -1,5 +1,5 @@
 # bamboo-fountain-web
-Bamboo Fountain is an open source screenplay editor that includes all your basic script writing needs, directed by ronin-on-linux, using components from Fountain.
+Bamboo Fountain is an open source screenplay editor that includes all your basic script writing needs, directed by ronin-on-linux, adapting components from Fountain and CodeMirror.
 
 bamboo-fountain-web provides a writing experience that is pleasantly simple, allowing you to feel at home with its theme-able UI, while being accessible from anywhere and offline. No server access, no cloud, no AI assistant features. Just focused screenwriting.
 
