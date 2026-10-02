@@ -21,7 +21,7 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 - 'Ctrl + Z' and 'Ctrl + Y' undo/redo.
 - 'Ctrl + B', 'Ctrl + U' and 'Ctrl + I' for bold, underline and italics.
 - Intuitive Title Page and Screenplay editor, with live line formatting, rebuilt to fully support markdown in the editor.
-- Markdown and live rendered view alongside pdf preview.
+- Markdown and live rendered view alongside pdf preview with syntax highlights built on CodeMirror.
 - Dual dialogue supported in PDF export.
 - Duration and length estimate statistics/
 - Keybindings page.
