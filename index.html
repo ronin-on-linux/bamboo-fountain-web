@@ -257,34 +257,92 @@ const CYCLE=["action","scene","character","transition","centered","lyric"];
 const cycle=dir=>v=>{const c=curType(v),i=CYCLE.indexOf(c);return setType(v,CYCLE[(i<0?0:i+dir+CYCLE.length)%CYCLE.length])};
 
 // ── 4. EDITOR ──
-const SAMPLE=`Title: Your Title Here
+const SAMPLE=`Title: The Sandwiches
 Credit: Written by
 Author: Your Name
 
-EXT. MOJAVE DESERT - DAY
+INT. SMALL APARTMENT - NIGHT
 
-The sun bleeds red across cracked earth. A JEEP pulls up to a prairie house.
+A cramped kitchen. The fluorescent light above the counter buzzes and flickers. A half-eaten sandwich sits on a small paper plate.
 
-_**BEGIN MEMORY MONTAGE:**_
+JANE
+(not looking up)
+You still up?
 
-INT. PRAIRIE HOUSE - NIGHT
+MARK^
+(from the doorway)
+I was never down.
 
-MIRA SOLANO (30s, sunburned) steps through the door.
+Jane turns. A cold look. She picks up the sandwich, examines it, sets it back down.
 
-MIRA
-(looking around cautiously)
-Frank? Are you there?
+JANE
+I'm going to bed.
 
-FRANK (V.O.)
-Mira? What are you doin--
+MARK
+Cool.
+
+JANE
+You should sleep too.
+
+MARK
+I will. Eventually.
+
+Jane walks to the door. Stops.
+
+JANE
+(over her shoulder)
+Mark.
+
+MARK
+Yeah.
+
+JANE
+The sandwich is for me.
+
+She exits. Mark looks at the sandwich. Looks at the door.
+
+Picks up the sandwich.
 
 CUT TO:
 
-INT. BASEMENT - CONTINUOUS
+EXT. CITY STREET - LATER
 
-A glowing crystal floats above a *copper* contraption. Select across lines, **Tab** cycles the line type, Ctrl+Z undoes everything.
+Rain. A single streetlight cuts through the mist. The city breathes -- distant sirens, a bus groaning uphill.
 
->THE END<
+JANE walks fast, collar up, eyes down. She passes a 24-hour convenience store. The neon sign hums.
+
+She stops. Looks in.
+
+A MAN sits alone at the counter, reading a paperback.
+
+He doesn't look up.
+
+JANE holds the door. Waits. Then closes it.
+
+INT. CONVENIENCE STORE - CONTINUOUS
+
+The bell dings. The MAN finally looks up.
+
+MAN
+You're back.
+
+JANE
+(flat)
+I was never here.
+
+MAN
+(turning a page)
+You bought a sandwich here last night. Same sandwich. Same time.
+
+JANE
+I don't remember.
+
+MAN
+That's the point, isn't it?
+
+Jane stares at him. The hum of the refrigerator fills the silence.
+
+> FADE OUT.
 `;
 // Every new project starts with this title page (the cursor lands on the blank line below it).
 const defaultDoc=()=>`Title: Untitled Screenplay
