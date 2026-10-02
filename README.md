@@ -15,7 +15,7 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 - [ ] Eventually integrate note encryption of some sort to keep users data safe.
 
 > [!NOTE]
-> Save/open window dialogue is broken on the website verison. Installing the PWA fixes this issue. Use PWA instead of in browser for the moment.
+> BUG! Save/open window dialogue is broken on the website verison. Installing the PWA fixes this issue. Use PWA instead of in browser for the moment.
 
 
 ## Current Features
