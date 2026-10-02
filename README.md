@@ -1,17 +1,17 @@
 # bamboo-fountain-web
 Bamboo Fountain is an open source screenplay editor that includes all your basic script writing needs, directed by ronin-on-linux, adapting components from Fountain and CodeMirror.
 
-bamboo-fountain-web provides a writing experience that is pleasantly simple, allowing you to feel at home with its theme-able UI, while being accessible from anywhere and offline. No server access, no cloud, no AI assistant features. Just focused screenwriting.
+bamboo-fountain-web provides a writing experience that is pleasantly simple, allowing you to feel at home with its theme-able UI, while being accessible from anywhere and offline. No server access, no cloud, no AI assistant features. Just deep, focused screenwriting.
 
 <img width="1201" height="898" alt="Document" src="https://github.com/user-attachments/assets/4de3bca1-af6a-44b6-8654-3b096084a45c" />
 
 ## Future Developments
-- [ ] My next goal is to get a native gtk or qt linux desktop version started in development soon, with the aim of replicating and expanding the functionality of Bamboo Fountain, offering a fully featured screenplay writing software for creatives who prefer the open source ecosystem and dislike electron apps. (native app will be published under a separate git repo)
+- [ ] My next goal is to get a native qt linux desktop version started in development soon, with the aim of replicating and expanding the functionality of Bamboo Fountain, offering a fully featured screenplay writing software for creatives who prefer the open source ecosystem and dislike webkit/pwa/electron apps. (native app will be published under a separate git repo.)
 - [ ] Implement spell check.
 - [ ] Eventually integrate note encryption of some sort to keep users data safe.
 
 > [!NOTE]
-> BUG! Save/open window dialogue is broken on the website verison. Installing the PWA fixes this issue. Use PWA instead of in browser for the moment.
+> BUG! Save/open window dialogue theows an error on the website verison when using brave/brave-origin. Installing the PWA fixes this issue. Use PWA instead of in browser for the moment if the popup error is bothersome.
 
 
 ## Current Features
