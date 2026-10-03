@@ -1,7 +1,7 @@
 /* Bamboo Fountain service worker
  * - Precaches the app shell + CodeMirror modules (from esm.sh) so the editor works offline.
  * - Bump VERSION whenever index.html changes to roll out an update. */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL_CACHE = 'bf-shell-' + VERSION;
 const CDN_CACHE = 'bf-cdn-v1'; // CodeMirror URLs are version-pinned, so this cache can persist across app versions
 
@@ -17,7 +17,14 @@ const SHELL = [
 const CDN_ENTRIES = [
   'https://esm.sh/@codemirror/state@6.4.1',
   'https://esm.sh/@codemirror/view@6.26.3?deps=@codemirror/state@6.4.1',
-  'https://esm.sh/@codemirror/commands@6.5.0?deps=@codemirror/state@6.4.1,@codemirror/view@6.26.3'
+  'https://esm.sh/@codemirror/commands@6.5.0?deps=@codemirror/state@6.4.1,@codemirror/view@6.26.3',
+  'https://esm.sh/nspell@2.1.5'
+];
+
+// Spellcheck dictionary files (plain text, no imports to follow). Must match DICT_BASE in index.html
+const DICT_URLS = [
+  'https://cdn.jsdelivr.net/npm/dictionary-en@4.0.0/index.aff',
+  'https://cdn.jsdelivr.net/npm/dictionary-en@4.0.0/index.dic'
 ];
 
 // Cache a module and, recursively, every module it imports (esm.sh uses absolute-path imports like "/v135/...")
@@ -47,6 +54,14 @@ self.addEventListener('install', event => {
       const cdn = await caches.open(CDN_CACHE);
       await Promise.all(CDN_ENTRIES.map(u => cacheModuleTree(u, cdn)));
     } catch (e) { /* runtime caching below will fill the gaps */ }
+    try {
+      const cdn = await caches.open(CDN_CACHE);
+      await Promise.all(DICT_URLS.map(async u => {
+        if (await cdn.match(u)) return;
+        const r = await fetch(u, { mode: 'cors' });
+        if (r.ok) await cdn.put(u, r);
+      }));
+    } catch (e) { /* same: fetched and cached on first use instead */ }
     await self.skipWaiting();
   })());
 });
@@ -79,8 +94,8 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // CodeMirror modules from esm.sh: cache first, add anything new at runtime.
-  if (url.hostname === 'esm.sh') {
+  // CodeMirror/nspell modules (esm.sh) and the spellcheck dictionary (jsDelivr): cache first, add anything new at runtime.
+  if (url.hostname === 'esm.sh' || url.hostname === 'cdn.jsdelivr.net') {
     event.respondWith((async () => {
       const cache = await caches.open(CDN_CACHE);
       const hit = await cache.match(req);
