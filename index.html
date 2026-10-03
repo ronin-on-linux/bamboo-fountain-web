@@ -32,6 +32,17 @@ html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%}
 "nspell":"https://esm.sh/nspell@2.1.5"}}</script>
 <style>
 :root{--bg:#111010;--bar:#0e0e0e;--bd:#1e1e1e;--tx:#ddd5c5;--mu:#666;--ac:#3dba7a;--ch:#9ee8c0;--tr:#2a8a55;--ly:#56c8d8}
+/* Custom scrollbars: slim pill thumb tinted from the theme's text colour, no track, and very faint until you hover the pane. */
+*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--tx) 22%,transparent) transparent}   /* Firefox */
+@supports selector(::-webkit-scrollbar){   /* Chrome / Edge / Safari: the pseudo-elements allow rounded, hover-aware styling */
+  *{scrollbar-width:auto;scrollbar-color:auto}
+  ::-webkit-scrollbar{width:14px;height:14px;background:transparent}
+  ::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:transparent}
+  ::-webkit-scrollbar-thumb{background-color:color-mix(in srgb,var(--tx) 12%,transparent);background-clip:padding-box;border:4px solid transparent;border-radius:8px;min-height:40px;min-width:40px}
+  *:hover::-webkit-scrollbar-thumb{background-color:color-mix(in srgb,var(--tx) 22%,transparent)}
+  *::-webkit-scrollbar-thumb:hover{background-color:color-mix(in srgb,var(--tx) 40%,transparent)}
+  *::-webkit-scrollbar-thumb:active{background-color:color-mix(in srgb,var(--ac) 70%,transparent)}
+}
 :root[data-t=light]{--bg:#f0ece4;--bar:#e8e4dc;--bd:#d0cac0;--tx:#1a1a1a;--mu:#999;--ac:#1a7a50;--ch:#0f3d2a;--tr:#2a6040;--ly:#0e4a5a}
 *{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--tx);font:12px 'IBM Plex Mono',monospace}
 #app{display:flex;flex-direction:column;height:100%}
@@ -47,13 +58,14 @@ button:hover{color:var(--tx)}button.on{background:var(--ac);border-color:var(--a
 .dm{display:none;position:absolute;top:100%;left:0;margin-top:6px;z-index:9;background:var(--bar);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;min-width:210px;flex-direction:column;gap:8px;box-shadow:0 8px 28px #0006;text-transform:none;letter-spacing:0}
 .dm.show{display:flex}.dm label{display:flex;gap:8px;align-items:center;color:var(--tx);cursor:pointer;font-size:11px}.dm small{color:var(--mu);font-size:9px;text-transform:uppercase;letter-spacing:.06em}.dm input{accent-color:var(--ac);margin:0}
 .sp{flex:1}.dn{color:var(--mu);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:42%;text-align:center}.vsep{width:1px;height:18px;background:var(--bd);margin:0 4px;flex-shrink:0}#main{flex:1;display:flex;min-height:0}
-#side{width:190px;flex:none;display:flex;flex-direction:column;background:var(--bar);border-right:1px solid var(--bd);padding:6px 0}
-#sideHead{display:flex;align-items:center;justify-content:space-between;padding:0 8px 6px 12px;color:var(--mu);font-size:9px;letter-spacing:.08em;text-transform:uppercase}
+#side{position:relative;width:var(--sideW,200px);flex:none;display:flex;flex-direction:column;background:var(--bar);border-right:1px solid var(--bd);padding:6px 0}
+#sideHead{display:flex;align-items:center;justify-content:space-between;padding:0 8px 6px 12px;color:var(--mu);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
 #sideToggle{padding:1px 7px;font-size:14px;line-height:1.1;letter-spacing:0}
 #sideList{overflow-y:auto;flex:1;min-height:0;position:relative}
 #sideList{padding:2px 8px 8px}
-#sideList div{padding:6px 9px;margin:0 0 6px;font-size:10px;line-height:1.35;color:var(--mu);cursor:pointer;font-family:'Courier Prime',monospace;border:1px solid var(--bd);border-radius:6px;overflow-wrap:anywhere}
+#sideList div{padding:7px 10px;margin:0 0 6px;font-size:11px;line-height:1.35;color:var(--mu);cursor:pointer;font-family:'Courier Prime',monospace;border:1px solid var(--bd);border-radius:6px;overflow-wrap:anywhere}
 #sideList div:hover{color:var(--tx);border-color:var(--mu)}#sideList div.cur{color:var(--ac);background:#8881;border-color:var(--ac)}
+#sideSplit{position:absolute;top:0;bottom:0;right:-3px;width:6px;cursor:col-resize;z-index:3}#sideSplit:hover,#sideSplit.drag{background:var(--ac);opacity:.4}#side.c #sideSplit{display:none}
 #side.c{width:36px}#side.c #sideHead{justify-content:center;padding:0}#side.c #sideHead span,#side.c #sideList{display:none}
 #ed{flex:1;min-width:0;overflow:auto}
 .cm-editor{min-height:100%;background:transparent;color:var(--tx)}.cm-editor.cm-focused{outline:none}
@@ -95,8 +107,8 @@ button:hover{color:var(--tx)}button.on{background:var(--ac);border-color:var(--a
 .pn{padding:6px;text-align:center;font-size:9px;color:var(--ac);background:var(--bar);border-top:1px solid var(--bd)}
 .pv{flex:1;overflow:auto;display:flex;justify-content:center;padding:20px;background:#1a1a1a}
 #pf{width:8.5in;max-width:100%;min-height:11in;background:#1a1a1a;border:0;flex-shrink:0}
-#sm,#lm,#km{position:fixed;inset:0;z-index:20;display:none;justify-content:center;align-items:flex-start;overflow:auto;padding:5vh 12px;background:#000a}#sm.show,#lm.show,#km.show{display:flex}
-#sc,#lc,#kc{width:100%;max-width:720px;background:var(--bar);border:1px solid var(--bd);border-radius:10px;padding:14px 18px 16px;font-size:11px;box-shadow:0 8px 30px #0008}
+#sm,#lm,#km,#dsm,#stm{position:fixed;inset:0;z-index:20;display:none;justify-content:center;align-items:flex-start;overflow:auto;padding:5vh 12px;background:#000a}#sm.show,#lm.show,#km.show,#dsm.show,#stm.show{display:flex}
+#sc,#lc,#kc,#dsc,#stc{width:100%;max-width:720px;background:var(--bar);border:1px solid var(--bd);border-radius:10px;padding:14px 18px 16px;font-size:11px;box-shadow:0 8px 30px #0008}
 #sc h4{margin:16px 0 6px;font-size:9px;font-weight:400;letter-spacing:.08em;text-transform:uppercase;color:var(--ac)}#sc h4 small{color:var(--mu);letter-spacing:.04em;text-transform:none;margin-left:6px}
 .kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:12px 0 0}.kp div{border:1px solid var(--bd);border-radius:6px;padding:8px 10px}
 .kp b{display:block;font-size:20px;font-weight:400;color:var(--tx);font-family:'Courier Prime',monospace}.kp u{display:block;margin-top:2px;text-decoration:none;color:var(--ac);font-size:10px}.kp span{color:var(--mu);font-size:9px;text-transform:uppercase;letter-spacing:.06em}
@@ -108,18 +120,96 @@ button:hover{color:var(--tx)}button.on{background:var(--ac);border-color:var(--a
 #st2{display:flex}#st1,#st2{white-space:nowrap;flex-shrink:0}#st2 span:not(:empty)~span:not(:empty)::before{content:"·";margin:0 6px}#sBak.act{color:var(--ac);cursor:pointer;text-decoration:underline dotted}
 #lc pre{white-space:pre-wrap;font:11px/1.55 'IBM Plex Mono',monospace;color:var(--tx);margin:12px 0 0}#sLic{cursor:pointer}#sLic:hover{color:var(--tx);text-decoration:underline dotted}
 .so{display:flex;gap:16px;align-items:center;margin-top:16px;padding-top:10px;border-top:1px solid var(--bd);color:var(--mu)}.so input{width:58px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:4px;padding:3px 6px;font:inherit}
-#learnFountain{background:transparent;color:var(--mu);border:1px solid var(--bd);border-radius:5px;padding:4px 9px;font:inherit;text-transform:uppercase;letter-spacing:.06em;text-decoration:none;flex-shrink:0;white-space:nowrap}#learnFountain:hover{color:var(--ac);border-color:var(--ac)}
+#learnFountain,#discoverBtn{cursor:pointer;background:transparent;color:var(--mu);border:1px solid var(--bd);border-radius:5px;padding:4px 9px;font:inherit;text-transform:uppercase;letter-spacing:.06em;text-decoration:none;flex-shrink:0;white-space:nowrap}#learnFountain:hover,#discoverBtn:hover{color:var(--ac);border-color:var(--ac)}
 #kc{max-width:460px}#kc .kr{display:flex;justify-content:space-between;gap:16px;padding:5px 0;border-bottom:1px solid var(--bd);color:var(--tx)}#kc .kr:last-child{border:0}#kc .kh{margin:12px 0 2px;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;font-size:10px}#kc kbd{font:inherit;color:var(--ac);white-space:nowrap}
+#dsm{z-index:21}#dsc{max-width:520px}#dsc .dp{color:var(--mu);line-height:1.5;margin:10px 0 0}
+#dsc h4{margin:16px 0 6px;font-size:10px;font-weight:400;letter-spacing:.08em;text-transform:uppercase;color:var(--ac)}
+.dsr{display:flex;flex-wrap:wrap;gap:6px}
+.dsb{display:inline-block;padding:5px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--tx);text-decoration:none;font-size:11px;line-height:1.3}
+.dsb:hover{color:var(--ac);border-color:var(--ac)}.dsn{color:var(--mu);margin-right:5px}.dsb:hover .dsn{color:inherit}
+#dsc .dsf{margin-top:18px;padding-top:12px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end}
+#stm{align-items:center}#stc{max-width:380px}#stc .stp{color:var(--mu);margin:8px 0 14px;line-height:1.5}
+.stb{display:block;box-sizing:border-box;width:100%;text-align:left;padding:8px 12px;margin:0 0 6px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--tx);font:inherit;font-size:12px;cursor:pointer;text-decoration:none}
+.stb b{font-weight:400}.stb[data-a=learn] b{text-transform:uppercase;letter-spacing:.06em}.stb span{display:block;margin-top:2px;color:var(--mu);font-size:10px}
+.stb:hover:not(:disabled),.stb:focus-visible{color:var(--ac);border-color:var(--ac);outline:none}.stb:disabled{opacity:.45;cursor:default}
+.sts{height:1px;background:var(--bd);margin:12px 0}
 .spell{text-decoration:underline wavy #e5484d;text-decoration-thickness:1px;text-underline-offset:3px;text-decoration-skip-ink:none}
 #sSpell{cursor:pointer}#sSpell:hover{color:var(--tx);text-decoration:underline dotted}
 #spm{position:fixed;z-index:30;min-width:160px;max-width:260px;background:var(--bar);border:1px solid var(--bd);border-radius:8px;padding:4px;box-shadow:0 8px 28px #0006;font-size:11px;text-transform:none;user-select:none}
 #spm div{padding:6px 10px;border-radius:5px;cursor:pointer;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #spm div:hover{background:color-mix(in srgb,var(--ac) 25%,transparent)}#spm .sg{font-weight:700}#spm .mu{color:var(--mu);cursor:default}#spm .mu:hover{background:none}
 #spm hr{border:0;border-top:1px solid var(--bd);margin:4px 0}
-</style></head><body>
+</style><style id="files-css">
+[hidden]{display:none!important}
+#fileSec{display:flex;flex-direction:column;flex:1 1 0;min-height:0;border-top:1px solid var(--bd);padding-top:6px}
+#fileSec.empty{flex:none}
+#fileHead{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:0 8px 4px 12px;color:var(--mu);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+#fileHead>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+#fileHead button{padding:1px 6px;font-size:11px;letter-spacing:0;text-transform:none}
+#fileTree{overflow-y:auto;flex:1;min-height:0;padding-bottom:8px}
+#fileTree div{padding:4px 10px;font-size:11px;color:var(--mu);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#fileTree div:hover{color:var(--tx);background:#8881}
+#fileTree .fd{color:var(--tx)}#fileTree .ff.cur{color:var(--ac)}
+#fileTree .ff i{font-style:normal;font-size:9px;border:1px solid var(--bd);border-radius:3px;padding:0 3px;margin-right:4px}
+#fileTree .fe{white-space:normal;cursor:default;line-height:1.5;padding:4px 12px}#fileTree .fe:hover{background:none;color:var(--mu)}
+#side.c #fileSec{display:none}
+#notes{position:relative;overflow:hidden;display:flex;flex-direction:column;background:var(--bar);min-width:0;flex:0 0 42%;padding:8px}
+#nCard{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--bg);border:1px solid color-mix(in srgb,var(--tx) 14%,var(--bd));border-radius:10px;overflow:hidden}
+#nHead{display:flex;gap:6px;align-items:center;padding:5px 8px;background:var(--bar);border-bottom:1px solid var(--bd);flex:none;user-select:none}
+#nName{color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;margin-right:auto}
+#nSplit{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:col-resize;z-index:2}#nSplit:hover{background:var(--ac);opacity:.4}
+#nBody{flex:1;min-height:0;display:flex;flex-direction:column}
+#mdEd{flex:1;min-height:0;position:relative;overflow:hidden}
+#mdEd .cm-editor{position:absolute!important;inset:0;height:auto!important;min-height:0!important}
+#mdEd .cm-scroller{overflow:auto!important;height:100%}
+#mdEd .cm-scroller,#mdEd .cm-content{font-family:'Courier Prime','Courier New',Courier,monospace!important}
+#mdEd{--ncb:color-mix(in srgb,var(--tx) 9%,transparent);--nh:rgba(255,208,0,.28);--nm:color-mix(in srgb,var(--tx) 55%,var(--bg))}
+#mdEd .cm-content{max-width:700px;margin:0 auto!important;padding:1.5rem 1.5rem 6rem!important;font-size:12pt;line-height:1.5;color:var(--tx)}
+/* Obsidian-style reading: Obsidian's heading scale, plain text-coloured body, accent/theme-coloured links and quote bar, soft code chips.
+   Per-theme heading/bold/italic/link/code/quote colours come from NP in the theme code (--h1..--h6, --nb, --ni, --nl, --nc, --nq). */
+#mdEd .mkr{color:var(--mu);opacity:.9}
+#mdEd .md-h{font-weight:600;line-height:1.25;padding-top:.45em!important}
+#mdEd .md-h1{color:var(--h1);font-size:2em;font-weight:700}
+#mdEd .md-h2{color:var(--h2);font-size:1.6em}
+#mdEd .md-h3{color:var(--h3);font-size:1.37em}
+#mdEd .md-h4{color:var(--h4);font-size:1.25em}
+#mdEd .md-h5{color:var(--h5);font-size:1.12em}
+#mdEd .md-h6{color:var(--h6);font-size:1em}
+#mdEd .md-b,#mdEd .md-bi{font-weight:700;color:var(--nb)}
+#mdEd .md-i,#mdEd .md-bi{font-style:italic}#mdEd .md-i{color:var(--ni)}
+#mdEd .md-h .md-b,#mdEd .md-h .md-bi,#mdEd .md-h .md-i{color:inherit}
+#mdEd .md-s{text-decoration:line-through;color:var(--mu)}
+#mdEd .md-hl{background:var(--nh);border-radius:2px;padding:.05em 0}
+#mdEd .md-c{font-family:'Courier Prime','Courier New',Courier,monospace;font-size:.9em;color:var(--nc);background:var(--ncb);border-radius:4px;padding:.1em .35em}
+#mdEd .md-a{color:var(--nl);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.18em}#mdEd .md-img{color:var(--nl);font-style:italic}
+#mdEd .cm-line.md-code{font:.9em/1.5 'Courier Prime','Courier New',Courier,monospace;color:var(--nc);background:var(--ncb);padding:0 1.1em!important}
+#mdEd .cm-line.md-fe{line-height:.7}
+#mdEd .cm-line.md-q{border-left:2px solid var(--nq);padding-left:1em!important;color:var(--tx)}
+#mdEd .cm-line.md-hr{line-height:.6;border-bottom:2px solid color-mix(in srgb,var(--tx) 16%,transparent)}
+#mdEd .cm-line.md-fm{font:.85em/1.5 'Courier Prime','Courier New',Courier,monospace;color:var(--mu)}
+#mdEd .cm-line.md-tbl{font:.9em/1.5 'Courier Prime','Courier New',Courier,monospace}
+#mdEd .md-lm{color:var(--nm)}#mdEd .md-bul{color:var(--nm);display:inline-block;width:1.1em;text-align:center}#mdEd .md-chk{color:var(--ac);cursor:pointer;margin-right:.2em}
+/* Source mode: monospace, line numbers, colours only (no sizes, weights or boxes), like the screenplay's Markdown view */
+#mdEd.src .cm-scroller,#mdEd.src .cm-content{font-family:'Courier Prime','Courier New',Courier,monospace!important}
+#mdEd.src .cm-content{font-size:12pt;line-height:1.5;margin:0!important;max-width:none}
+#mdEd.src .mkr{opacity:1}
+#mdEd.src .md-h{font-size:inherit;font-weight:400;line-height:inherit;border:0;padding-top:0!important}
+#mdEd.src .md-b,#mdEd.src .md-bi{font-weight:400}#mdEd.src .md-i,#mdEd.src .md-bi{font-style:normal}
+#mdEd.src .md-s{text-decoration:none}#mdEd.src .md-a{text-decoration:none}#mdEd.src .md-img{font-style:normal}
+#mdEd.src .md-c{font:inherit;background:none;border:0;padding:0}#mdEd.src .md-hl{background:none;padding:0}
+#mdEd.src .cm-line.md-code{background:none;font:inherit;padding:0!important}
+#mdEd.src .cm-line.md-fe,#mdEd.src .cm-line.md-hr{line-height:inherit}
+#mdEd.src .cm-line.md-hr{border:0;color:var(--mu)}
+#mdEd.src .cm-line.md-q{border:0;padding-left:0!important;color:inherit}
+#mdEd.src .cm-line.md-fm,#mdEd.src .cm-line.md-tbl{font:inherit}
+#mdEd.src .cm-gutters{display:flex!important;background:transparent!important;border:0!important;color:var(--mu)!important;font:11px 'Courier Prime','Courier New',Courier,monospace}
+#mdEd .cm-lineNumbers .cm-gutterElement{min-width:3ch;padding:0 10px 0 12px;text-align:right;line-height:1.5;font-size:11px}
+#mdEd .cm-activeLineGutter{background:transparent!important;color:var(--tx)}
+</style>
+</head><body>
 <div id="app">
  <div class="bar"><button id="outBtn" title="Show / hide outline (Ctrl+\)">☰</button><b style="color:var(--ac)">Bamboo Fountain</b><span class="vsep"></span>
-  <div class="dd"><button id="sceneBtn">Scene ▾</button><div class="dm" id="sceneMenu"></div></div><div class="dd"><button id="titleBtn">Title ▾</button><div class="dm" id="titleMenu"></div></div><button id="md" title="Show all Fountain markdown (Ctrl+/)">Markdown</button><button id="stats" title="Page, word and runtime statistics">Stats</button><span class="sp"></span><span id="docname" class="dn"></span><span class="sp"></span><button id="new">New</button><button id="open" title="Open (Ctrl/⌘+O)">Open</button><button id="save" title="Save (Ctrl/⌘+S)">Save</button><button id="saveas" title="Save As (Ctrl/⌘+Shift+S)">Save As</button><button id="pdf">PDF</button><span class="vsep"></span><button id="theme">Theme</button>
+  <div class="dd"><button id="sceneBtn">Scene ▾</button><div class="dm" id="sceneMenu"></div></div><div class="dd"><button id="titleBtn">Title ▾</button><div class="dm" id="titleMenu"></div></div><button id="md" title="Show all Fountain markdown (Ctrl+/)">Markdown</button><button id="spBtn" title="Spell check on / off (right-click a flagged word for suggestions)">Spellcheck</button><button id="stats" title="Page, word and runtime statistics">Stats</button><span class="sp"></span><span id="docname" class="dn"></span><span class="sp"></span><button id="new">New</button><button id="open" title="Open (Ctrl/⌘+O)">Open</button><button id="save" title="Save (Ctrl/⌘+S)">Save</button><button id="saveas" title="Save As (Ctrl/⌘+Shift+S)">Save As</button><button id="pdf">PDF</button><span class="vsep"></span><button id="theme">Theme</button>
   <input id="file" type="file" accept=".fountain,.txt" hidden></div>
  <div id="tp"></div>
  <div id="pm"><div class="ph"><b style="color:var(--tx)">Print Preview</b><span class="sp"></span><span>Watermark</span>
@@ -131,8 +221,10 @@ button:hover{color:var(--tx)}button.on{background:var(--ac);border-color:var(--a
    <div id="sb"></div>
    <div class="so"><span>Model</span><label>speech <input id="swpm" type="number" min="2" max="9" step=".1"> syllables/sec</label><label>action <input id="sact" type="number" min="5" max="60" step="1"> chars/sec</label></div></div></div>
 <div id="km"><div id="kc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Keybindings</b><span class="sp"></span><button id="kx">×</button></div><div id="kl"></div></div></div>
+<div id="dsm"><div id="dsc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Discover Scripts</b><span class="sp"></span><button id="dsx">×</button></div><div id="dsl"></div></div></div>
+<div id="stm"><div id="stc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Bamboo Fountain</b><span class="sp"></span><button id="stx" title="Close (Esc)">×</button></div><div class="stp">Live Fountain screenplay editor. What would you like to do?</div><div id="stl"></div></div></div>
 <div id="lm"><div id="lc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Licenses</b><span class="sp"></span><button id="lx">×</button></div><pre id="lt"></pre></div></div>
-  <div id="main"><div id="side"><div id="sideHead"><span>Outline</span><button id="sideToggle" title="Collapse outline">‹</button></div><div id="sideList"></div></div><div id="ed"></div></div>
+  <div id="main"><div id="side"><div id="sideSplit" title="Drag to resize (double-click to reset)"></div><div id="sideHead"><span>Outline</span><button id="sideToggle" title="Collapse outline">‹</button></div><div id="sideList"></div><div id="fileSec" class="empty"><div id="fileHead"><span id="projName">Files</span><span><button id="fNew" title="New note in folder root" hidden>+</button><button id="fRef" title="Refresh" hidden>↻</button><button id="fX" title="Close folder" hidden>×</button><button id="fOpenBtn" title="Open a project folder">Folder…</button></span></div><div id="fileTree"></div></div></div><div id="ed"></div><div id="notes" hidden><div id="nSplit"></div><div id="nCard"><div id="nHead"><span id="nName"></span><button id="nMd" title="Show all markdown (Ctrl/⌘+/)">Markdown</button><button id="nSave">Save</button><button id="nX" title="Close">×</button></div><div id="nBody"><div id="mdEd"></div></div></div></div></div>
  <div class="bar bot" id="fmt"></div>
  <div class="bar bot" id="stat" style="font-size:9px;color:var(--mu)"><span id="st1"></span><span class="sp"></span><span id="st2"><span id="sFile"></span><span id="sLoc"></span><span id="sBak"></span><span id="sSpell" title="Turn spell check on or off"></span><span id="sLic" title="Open-source licenses">Licenses</span></span></div>
 </div>
@@ -506,7 +598,7 @@ if(document.fonts&&document.fonts.load){
 
 // ── 5. CHROME: scene list, format bar, status, file ops ──
 const $=id=>document.getElementById(id);
-$("fmt").innerHTML=TYPES.map(t=>`<button data-t="${t}">${t}</button>`).join("")+`<span class="sp"></span><button id="kbBtn" title="Show keyboard shortcuts">Keybindings</button><a id="learnFountain" href="https://fountain.io/syntax/" target="_blank" rel="noopener noreferrer" title="Open the Fountain syntax guide">Learn Fountain</a>`;
+$("fmt").innerHTML=TYPES.map(t=>`<button data-t="${t}">${t}</button>`).join("")+`<span class="sp"></span><button id="kbBtn" title="Show keyboard shortcuts">Keybindings</button><a id="learnFountain" href="https://fountain.io/syntax/" target="_blank" rel="noopener noreferrer" title="Open the Fountain syntax guide">Learn Fountain</a><a id="discoverBtn" href="#" role="button" title="Browse recommended screenplays on ScriptSlug">Discover Scripts</a>`;
 $("fmt").onpointerdown=e=>{const t=e.target.dataset?.t;if(t){e.preventDefault();setType(view,t)}};
 function chrome(){
   const cur=curType(view),ln=view.state.doc.lineAt(view.state.selection.main.head).number-1;
@@ -574,12 +666,31 @@ $("theme").addEventListener("click",()=>document.querySelectorAll(".dm").forEach
 // ── THEMES (same palettes as the original app): [name,bg,toolbar,border,text,muted,defaultAccent,[accents: name,accent,character,transition,lyric]]
 const TH={
 dark:["Dark","#111010","#0e0e0e","#1e1e1e","#ddd5c5","#666",0,[["No color","#ddd5c5","#ddd5c5","#ddd5c5","#ddd5c5"],["Jade","#3dba7a","#9ee8c0","#2a8a55","#56c8d8"],["Violet","#9b7fea","#c4aff5","#7a5cc0","#67e8f9"],["Amber","#e09050","#fcd34d","#b06020","#f0c070"],["Rose","#e06080","#f9a8c0","#a03050","#f472b6"]]],
+space:["Space","#2d2d2d","#242424","#3d3d3d","#d6d6d6","#808080",0,[["No color","#d6d6d6","#d6d6d6","#d6d6d6","#d6d6d6"],["Ion","#6cb4ff","#a6d3ff","#4a86c8","#7fe3d0"],["Nebula","#9d8cff","#c9bfff","#7a6ad0","#6fe3f2"],["Aurora","#52d29a","#a2ecc9","#34a374","#6fd3e8"],["Mars","#f0825a","#ffc2a3","#c25a38","#f5c57a"]]],
 light:["Light","#f0ece4","#e8e4dc","#d0cac0","#1a1a1a","#999",0,[["No color","#1a1a1a","#1a1a1a","#1a1a1a","#1a1a1a"],["Jade","#1a7a50","#0f3d2a","#2a6040","#0e4a5a"],["Violet","#6b3ab0","#3b1a8a","#4a2090","#0e4a5a"],["Amber","#a05c10","#7a3800","#7a4000","#0e4a5a"],["Rose","#b03050","#801030","#802040","#0e4a5a"]]],
 catppuccin:["Catppuccin","#1e1e2e","#181825","#313244","#cdd6f4","#6c7086",0,[["Mauve","#cba6f7","#89b4fa","#f9e2af","#a6e3a1"],["Flamingo","#f2cdcd","#f38ba8","#fab387","#89dceb"],["Sky","#89dceb","#74c7ec","#cba6f7","#a6e3a1"],["Green","#a6e3a1","#94e2d5","#f9e2af","#89dceb"],["Peach","#fab387","#f9e2af","#f38ba8","#a6e3a1"]]],
 "tokyo-night":["Tokyo Night","#1a1b26","#16161e","#292e42","#c0caf5","#565f89",3,[["Blue","#7aa2f7","#7dcfff","#e0af68","#9ece6a"],["Purple","#bb9af7","#7aa2f7","#e0af68","#7dcfff"],["Cyan","#7dcfff","#bb9af7","#ff9e64","#9ece6a"],["Green","#9ece6a","#7dcfff","#e0af68","#bb9af7"],["Orange","#ff9e64","#e0af68","#f7768e","#9ece6a"]]],
 "osaka-jade":["Osaka Jade","#0d1f1a","#0b1a16","#1a3a30","#b4d9c8","#4a7a66",0,[["Jade","#3dba7a","#7ee8b8","#f0c070","#56c8d8"],["Teal","#2ab8b8","#7ee0e0","#e8a060","#a8e8c0"],["Sakura","#d87090","#f0a0b8","#3dba7a","#89d4e0"],["Gold","#d4a830","#f0d070","#3dba7a","#56c8d8"],["Iris","#8878d0","#b0a8f0","#3dba7a","#56c8d8"]]],
 gruvbox:["Gruvbox","#282828","#1d2021","#3c3836","#ebdbb2","#7c6f64",0,[["Classic","#b8bb26","#83a598","#fe8019","#d3869b"],["Aqua","#8ec07c","#83a598","#fabd2f","#d3869b"],["Orange","#fe8019","#fabd2f","#fb4934","#8ec07c"],["Purple","#d3869b","#b8bb26","#fe8019","#83a598"],["Red","#fb4934","#fabd2f","#8ec07c","#d3869b"]]],
 nord:["Nord","#2e3440","#242933","#3b4252","#eceff4","#6b7794",0,[["Frost","#88c0d0","#81a1c1","#ebcb8b","#a3be8c"],["Aurora G","#a3be8c","#8fbcbb","#ebcb8b","#88c0d0"],["Aurora Y","#ebcb8b","#88c0d0","#bf616a","#a3be8c"],["Aurora R","#bf616a","#d08770","#ebcb8b","#a3be8c"],["Aurora P","#b48ead","#88c0d0","#ebcb8b","#a3be8c"]]]};
+// Notes pane colours. Each theme has one hand-tuned, Obsidian-style palette (m = the sub-theme it fits best):
+// [h1,h2,h3,h4,h5,h6,bold,italic,link,code,quote]. Every other sub-theme is derived from its own Fountain colours
+// (scene=accent, character, transition, lyric), so the notes pane always matches what the screenplay is showing.
+// Dark/Space/Light's "No color" sub-theme keeps Obsidian's default look: plain headings, accent-coloured links and quote bar.
+const NPt="var(--tx)",NPa="var(--ac)",NPdef=[NPt,NPt,NPt,NPt,NPt,"var(--mu)",NPt,NPt,NPa,NPt,NPa];
+const NP={dark:{m:0,p:NPdef},space:{m:0,p:NPdef},light:{m:0,p:NPdef},
+catppuccin:{m:0,p:["#f38ba8","#fab387","#f9e2af","#a6e3a1","#74c7ec","#cba6f7","#f38ba8","#f5c2e7","#89b4fa","#94e2d5","#cba6f7"]},
+"tokyo-night":{m:0,p:["#f7768e","#ff9e64","#e0af68","#9ece6a","#7dcfff","#bb9af7","#ff9e64","#bb9af7","#7aa2f7","#7dcfff","#7aa2f7"]},
+"osaka-jade":{m:0,p:["#7ee8b8","#3dba7a","#f0c070","#56c8d8","#d87090","#8878d0","#f0c070","#89d4e0","#56c8d8","#7ee8b8","#3dba7a"]},
+gruvbox:{m:0,p:["#b8bb26","#d8a657","#e78a4e","#ea6962","#89b482","#d3869b","#fabd2f","#d3869b","#83a598","#8ec07c","#928374"]},
+nord:{m:0,p:["#bf616a","#d08770","#ebcb8b","#a3be8c","#88c0d0","#b48ead","#ebcb8b","#b48ead","#88c0d0","#a3be8c","#81a1c1"]}};
+const NPK=["h1","h2","h3","h4","h5","h6","nb","ni","nl","nc","nq"];
+const npMix=(c,n)=>`color-mix(in srgb,${c} ${n}%,var(--tx))`;   // pull dark/low-contrast accents toward the text colour
+function notesPal(t,i){
+  const n=NP[t];if(n&&n.m===i)return n.p;
+  const [,ac,ch,tr,ly]=TH[t][7][i],trc=npMix(tr,65);
+  return [ac,ch,trc,ly,npMix(ac,55),"var(--mu)",ch,npMix(ch,60),ly,trc,ac];
+}
 let themeKey=localStorage.getItem("bf_theme"),accentIdx=+localStorage.getItem("bf_accent");
 // "auto" follows the system light/dark setting (and updates live when it changes)
 const sysLight=()=>matchMedia("(prefers-color-scheme: light)").matches;
@@ -590,6 +701,8 @@ matchMedia("(prefers-color-scheme: light)").addEventListener("change",()=>{if(th
 function applyTheme(){
   const [,bg,bar,bd,tx,mu,,acc]=TH[resolved()],a=acc[accentIdx],r=document.documentElement.style;
   Object.entries({bg,bar,bd,tx,mu,ac:a[1],ch:a[2],tr:a[3],ly:a[4]}).forEach(([k,v])=>r.setProperty("--"+k,v));
+  notesPal(resolved(),accentIdx).forEach((v,i)=>r.setProperty("--"+NPK[i],v));
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content",bar);
   localStorage.setItem("bf_theme",themeKey);localStorage.setItem("bf_accent",accentIdx);
   $("tp").innerHTML=`<div class="r"><button data-k="auto" class="${themeKey==="auto"?"on":""}" title="Follow system light / dark">Auto</button>${Object.entries(TH).map(([k,t])=>`<button data-k="${k}" class="${k===themeKey?"on":""}">${t[0]}</button>`).join("")}</div>
    <div class="r">${acc.map((x,i)=>`<button class="sw ${i===accentIdx?"on":""}" data-a="${i}" title="${x[0]}" style="background:${x[1]}"></button>`).join("")}</div>`;
@@ -628,7 +741,7 @@ const norm=t=>t.replace(/^\uFEFF/,"").replace(/\r\n/g,"\n");
 // Three-way dialog shown before New/Open replace the document: resolves "save" | "discard" | "cancel".
 // Shown even when everything is already saved, so there is always a chance to intervene.
 let dlgOpen=false;
-function askUnsaved(what,clean){
+function askUnsaved(what,clean,name=fileName){
   return new Promise(res=>{
     dlgOpen=true;
     const wrap=document.createElement("div");
@@ -640,7 +753,7 @@ function askUnsaved(what,clean){
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button data-r="cancel" style="${btn}">Cancel</button><button data-r="discard" style="${btn}"></button><button data-r="save" style="${btn}">Save</button></div></div>`;
     const q=r=>wrap.querySelector(`[data-r="${r}"]`);
-    wrap.querySelector("[data-t]").textContent=clean?"No unsaved changes in "+fileName:"Save changes to "+fileName+"?";
+    wrap.querySelector("[data-t]").textContent=clean?"No unsaved changes in "+name:"Save changes to "+name+"?";
     wrap.querySelector("[data-m]").textContent=clean?"Everything is up to date. You can save again, or just continue before "+what+".":"Your changes will be lost if you don't save them before "+what+".";
     q("discard").textContent=clean?"Continue":"Don't Save";
     const def=q(clean?"discard":"save");def.style.cssText+=";background:var(--ac);color:var(--bg);border-color:var(--ac)";
@@ -662,7 +775,38 @@ const failed=(what,e)=>{console.error(e);alert("Couldn't "+what+": "+(e.message|
 const flashSaved=()=>{SS.file="Saved "+hms();paint();const b=$("save");b.textContent="Saved \u2713";setTimeout(()=>b.textContent="Save",1200)};
 async function writeTo(h,txt){const w=await h.createWritable();await w.write(txt);await w.close()}
 
+// File-type chooser for the file tree's + button. Resolves "fountain", "md", or null when cancelled.
+function askNewKind(){
+  return new Promise(res=>{
+    dlgOpen=true;
+    const wrap=document.createElement("div");
+    wrap.style.cssText="position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:#0008";
+    const btn="padding:8px 14px;border:1px solid var(--bd);border-radius:5px;background:var(--bg);color:var(--tx);font:inherit;cursor:pointer";
+    const choice=(r,t,x)=>`<button data-r="${r}" style="${btn};flex:1;text-align:left"><b>${t}</b><br><span style="opacity:.7;font-size:11px">${x}</span></button>`;
+    wrap.innerHTML=`<div role="alertdialog" aria-modal="true" aria-label="New file" style="background:var(--bar);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:18px 20px;width:360px;max-width:92vw;font:13px/1.45 system-ui,sans-serif;box-shadow:0 8px 30px #0008">
+      <div style="font-weight:700;margin-bottom:6px">New file</div>
+      <div style="color:var(--mu);margin-bottom:14px">What kind of file do you want to create?</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">${choice("fountain","Screenplay",".fountain")}${choice("md","Note",".md (Markdown)")}</div>
+      <div style="display:flex;justify-content:flex-end"><button data-r="cancel" style="${btn}">Cancel</button></div></div>`;
+    const def=wrap.querySelector('[data-r="fountain"]');def.style.cssText+=";background:var(--ac);color:var(--bg);border-color:var(--ac)";
+    const done=r=>{document.removeEventListener("keydown",onKey,true);wrap.remove();dlgOpen=false;res(r==="cancel"?null:r)};
+    const onKey=e=>{if(e.key==="Escape"){e.preventDefault();e.stopPropagation();done("cancel")}};
+    document.addEventListener("keydown",onKey,true);
+    wrap.onclick=e=>{const b=e.target.closest("[data-r]");if(b)done(b.dataset.r);else if(e.target===wrap)done("cancel")};
+    document.body.appendChild(wrap);def.focus();      // Enter = the highlighted button
+  });
+}
 $("new").onclick=async()=>{
+  const kind=FSA?await askNewKind():"fountain";if(!kind)return;   // notes are real files, so without the file API there is only the screenplay
+  if(kind==="md"){
+    try{
+      if(nh&&!await guardNote("opening a new note"))return;       // ask first, so cancelling never leaves a stray file
+      const h=await showSaveFilePicker({suggestedName:"notes.md",startIn:root||undefined,types:[{description:"Markdown",accept:{"text/markdown":[".md",".markdown"]}}]});
+      await writeTo(h,"# "+h.name.replace(/\.\w+$/,"")+"\n\n");
+      await openNote(h,null,true);renderTree();
+    }catch(e){if(e.name!=="AbortError")failed("create the note",e)}
+    return;
+  }
   if(!await guard("starting a new project"))return;
   loadDoc(defaultDoc());setName("untitled.fountain");
 };
@@ -716,6 +860,7 @@ $("file").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)r
 // PWA: double-clicking a .fountain file (manifest "file_handlers") delivers its handle here, so Save writes back to it.
 if("launchQueue" in window)launchQueue.setConsumer(async p=>{
   const h=p.files&&p.files[0];if(!h)return;
+  if(isMd(h.name)){await openNote(h,null);return}
   if(!await guard("opening "+h.name))return;
   try{loadDoc(norm(await (await h.getFile()).text()),0);setHandle(h);setName(h.name)}
   catch(e){failed("open the file",e)}
@@ -1014,10 +1159,273 @@ $("sBak").onclick=async()=>{
 };
 if(FSA)Promise.all([idbOp("readonly",st=>st.get("cur")),idbOp("readonly",st=>st.get("dir"))]).then(([h,v])=>{
   if(h&&!handle)handle=h;if(v&&v.d){bakDir=v.d;bakFor=v.n}bakState()});
+// ── 7b. PROJECT FOLDER + MARKDOWN NOTES ──
+// Folder tree lives under the outline. .fountain/.txt open in the main editor; .md opens in a notes pane.
+const DIRP=!!window.showDirectoryPicker&&window.top===window.self;
+function isMd(n){return /\.(md|markdown)$/i.test(n)}
+function isFt(n){return /\.(fountain|txt)$/i.test(n)}
+let root=null,savedRoot=null,openDirs=new Set(),nodes=new Map(),nid=0,rtok=0,shownFt=null;
+let nh=null,nPath=null,nDirty=false,nTimer=0;
+
+// ----- folder tree -----
+async function listDir(dh){
+  const out=[];
+  for await(const [name,h] of dh.entries()){
+    if(name.startsWith(".")||name==="node_modules")continue;
+    if(h.kind==="directory"||isMd(name)||isFt(name))out.push(h);
+  }
+  return out.sort((a,b)=>a.kind!==b.kind?(a.kind==="directory"?-1:1):a.name.localeCompare(b.name,undefined,{numeric:true}));
+}
+async function treeHtml(dh,path,depth,mp){
+  let s="";
+  for(const h of await listDir(dh)){
+    const p=path+"/"+h.name,id=++nid,pad=`style="padding-left:${6+depth*10}px"`;mp.set(id,{h,p});
+    if(h.kind==="directory"){const o=openDirs.has(p);s+=`<div class="fd" data-id="${id}" ${pad}>${o?"▾":"▸"} ${esc(h.name)}</div>`+(o?await treeHtml(h,p,depth+1,mp):"")}
+    else s+=`<div class="ff${p===shownFt||(nh&&p===nPath)?" cur":""}" data-id="${id}" ${pad} title="${esc(h.name)}"><i>${isMd(h.name)?"md":"ft"}</i>${esc(h.name)}</div>`;
+  }
+  return s;
+}
+async function renderTree(){
+  const t=$("fileTree"),st=t.scrollTop,tok=++rtok;
+  $("fileSec").classList.toggle("empty",!root&&!savedRoot);
+  $("fNew").hidden=$("fRef").hidden=$("fX").hidden=!root;$("fOpenBtn").hidden=!!root;
+  if(!DIRP){t.innerHTML=`<div class="fe">Opening folders needs Chrome, Edge or Opera.</div>`;return}
+  if(savedRoot){t.innerHTML=`<div class="fe"><button id="fReopen">Reopen “${esc(savedRoot.name)}”</button></div>`;return}
+  if(!root){t.innerHTML=`<div class="fe">Open a folder to browse .fountain and .md files.</div>`;return}
+  const mp=new Map();let html;
+  try{html=(await treeHtml(root,"",0,mp))||`<div class="fe">No .fountain, .txt or .md files here.</div>`}
+  catch(e){if(tok!==rtok)return;t.innerHTML=`<div class="fe">Couldn't read the folder (${esc(e.message||e.name)}). <button id="fPick">Choose again</button></div>`;return}
+  if(tok!==rtok)return;
+  nodes=mp;t.innerHTML=html;t.scrollTop=st;
+}
+async function setRoot(d){
+  root=d;savedRoot=null;openDirs=new Set();$("projName").textContent=d?d.name:"Files";
+  idbOp("readwrite",st=>d?st.put(d,"proj"):st.delete("proj"));
+  await renderTree();
+}
+async function pickFolder(){
+  try{await setRoot(await showDirectoryPicker({id:"bf-project",mode:"readwrite"}))}
+  catch(e){if(e.name!=="AbortError")failed("open the folder",e)}
+}
+$("fOpenBtn").onclick=pickFolder;$("fRef").onclick=renderTree;$("fX").onclick=()=>setRoot(null);
+$("fNew").onclick=async()=>{
+  const kind=await askNewKind();if(!kind)return;
+  const ft=kind==="fountain";
+  let n=prompt(ft?"New screenplay name:":"New note name:",ft?"untitled.fountain":"notes.md");n=n&&n.trim();if(!n)return;
+  // the chosen type decides the extension: keep a matching one, swap a mismatched one, add one if missing
+  n=ft?(/\.(fountain|txt)$/i.test(n)?n:n.replace(/\.(md|markdown)$/i,"")+".fountain")
+      :(isMd(n)?n:n.replace(/\.(fountain|txt)$/i,"")+".md");
+  try{
+    try{await root.getFileHandle(n);return alert(n+" already exists.")}catch(e){if(e.name!=="NotFoundError")throw e}
+    if(ft?!await guard("opening "+n):nh&&!await guardNote("opening "+n))return;   // the open editor is about to be replaced, so ask before creating anything
+    const h=await root.getFileHandle(n,{create:true});
+    if(ft){const txt=defaultDoc();await writeTo(h,txt);loadDoc(txt);setHandle(h);setName(n);shownFt="/"+n;await renderTree()}
+    else{await writeTo(h,"# "+n.replace(/\.\w+$/,"")+"\n\n");await openNote(h,"/"+n,true)}
+  }catch(e){failed("create the "+(ft?"screenplay":"note"),e)}
+};
+$("fileTree").onclick=async e=>{
+  if(e.target.id==="fPick")return pickFolder();
+  if(e.target.id==="fReopen"){
+    try{if(await savedRoot.requestPermission({mode:"readwrite"})==="granted")await setRoot(savedRoot)}catch(err){failed("reopen the folder",err)}
+    return;
+  }
+  const el=e.target.closest("[data-id]"),n=el&&nodes.get(+el.dataset.id);if(!n)return;
+  if(n.h.kind==="directory"){openDirs.has(n.p)?openDirs.delete(n.p):openDirs.add(n.p);return renderTree()}
+  try{
+    if(isMd(n.h.name))return await openNote(n.h,n.p);
+    if(!await guard("opening "+n.h.name))return;
+    loadDoc(norm(await (await n.h.getFile()).text()),0);setHandle(n.h);setName(n.h.name);shownFt=n.p;renderTree();
+  }catch(err){failed("open "+n.h.name,err)}
+};
+if(DIRP)idbOp("readonly",st=>st.get("proj")).then(async d=>{
+  if(!d)return renderTree();
+  try{if(await d.queryPermission({mode:"readwrite"})==="granted")return setRoot(d)}catch(e){}
+  savedRoot=d;$("projName").textContent=d.name;renderTree();
+});else renderTree();
+
+// ----- notes pane: one CodeMirror editor, Live (markers hidden off the active line) or Source (all markers shown) -----
+let mdSrc=localStorage.getItem("bf_nmode")==="src";
+const MdRef=Annotation.define();
+class Bul extends WidgetType{eq(){return true}toDOM(){const s=document.createElement("span");s.className="md-bul";s.textContent="•";return s}}
+class Chk extends WidgetType{constructor(c){super();this.c=c}eq(o){return o.c===this.c}
+  toDOM(v){const s=document.createElement("span");s.className="md-chk";s.textContent=this.c?"☑":"☐";
+    s.onmousedown=e=>{e.preventDefault();const p=v.posAtDOM(s);v.dispatch({changes:{from:p+1,to:p+2,insert:this.c?" ":"x"}})};return s}}
+// Inline pass for one line of text. off = document offset of s[0]. Order matters: code, links, then emphasis.
+function mdInline(s,off,on,out){
+  const used=new Uint8Array(s.length),free=(a,b)=>{for(let k=a;k<b;k++)if(used[k])return false;return true},take=(a,b)=>{for(let k=a;k<b;k++)used[k]=1};
+  const H=(a,b)=>{if(b>a)out.push((on?dim:hide).range(off+a,off+b))};
+  const M=(c,a,b,at)=>{if(b>a)out.push((at?Decoration.mark({class:c,attributes:at}):mk(c)).range(off+a,off+b))};
+  let m;
+  const rc=/`([^`\n]+)`/g;
+  while((m=rc.exec(s))){const a=m.index,b=a+m[0].length;take(a,b);M("md-c",a+1,b-1);H(a,a+1);H(b-1,b)}
+  const rl=/(!?)\[([^\]\n]*)\]\(([^)\s]*)(?:\s+"[^"]*")?\)/g;
+  while((m=rl.exec(s))){
+    const a=m.index,b=a+m[0].length,t0=a+m[1].length+1,t1=t0+m[2].length;
+    if(!free(a,t0)||!free(t1,b))continue;
+    take(a,t0);take(t1,b);H(a,t0);H(t1,b);
+    M(m[1]?"md-img":"md-a",t0,t1,m[1]?null:{"data-href":m[3],title:"Ctrl/⌘+click to open"});
+  }
+  for(const [k,c,re,us] of [[3,"md-bi",/\*\*\*(?=\S)(.+?)\*\*\*/g],[2,"md-b",/\*\*(?=\S)(.+?)\*\*/g],[2,"md-s",/~~(?=\S)(.+?)~~/g],[2,"md-hl",/==(?=\S)(.+?)==/g],
+      [1,"md-i",/\*(?=[^\s*])(.+?)\*/g],[1,"md-i",/(^|\W)_(?=[^\s_])(.+?)_(?=\W|$)/g,true]]){
+    while((m=re.exec(s))){
+      const a=m.index+(us?m[1].length:0),b=m.index+m[0].length;
+      if(!free(a,a+k)||!free(b-k,b))continue;
+      take(a,a+k);take(b-k,b);H(a,a+k);H(b-k,b);M(c,a+k,b-k);
+    }
+  }
+}
+function mdBuild(state){
+  const doc=state.doc,out=[],act=new Set();
+  for(const r of state.selection.ranges)for(let k=doc.lineAt(r.from).number;k<=doc.lineAt(r.to).number;k++)act.add(k);
+  let fmEnd=0;if(doc.line(1).text.trim()==="---")for(let n=2;n<=doc.lines;n++){const t=doc.line(n).text.trim();if(t==="---"||t==="..."){fmEnd=n;break}}
+  let fence=null;
+  for(let n=1;n<=doc.lines;n++){
+    const ln=doc.line(n),s=ln.text,on=mdSrc||act.has(n);
+    const LD=c=>out.push(Decoration.line({class:c}).range(ln.from));
+    const H=(a,b)=>{if(b>a)out.push((on?dim:hide).range(ln.from+a,ln.from+b))};
+    const inl=k=>mdInline(s.slice(k),ln.from+k,on,out);
+    let m;
+    if(n<=fmEnd){LD("md-fm");continue}
+    if(fence){
+      const t=s.trim(),close=t.length>=fence.len&&t===fence.ch.repeat(t.length);
+      LD(close?"md-code md-fe":"md-code");if(close){fence=null;if(!on)H(0,s.length)}
+      continue;
+    }
+    if((m=/^\s*(`{3,}|~{3,})/.exec(s))){fence={ch:m[1][0],len:m[1].length};LD("md-code md-fe");if(!on)H(0,s.length);continue}
+    if(!s.trim())continue;
+    if((m=/^(#{1,6})\s+/.exec(s))){LD("md-h md-h"+m[1].length);H(0,m[0].length);inl(m[0].length);continue}
+    if(/^\s{0,3}([-*_])(\s*\1){2,}\s*$/.test(s)){LD("md-hr");if(!on)H(0,s.length);continue}
+    if((m=/^(\s*>\s?)+/.exec(s))){LD("md-q");H(0,m[0].length);inl(m[0].length);continue}
+    if(/^\s*\|.*\|\s*$/.test(s)){
+      LD("md-tbl");
+      if(/^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(s)){out.push(dim.range(ln.from,ln.to));continue}
+      inl(0);continue;
+    }
+    if((m=/^(\s*)([-*+]|\d+[.)])(\s+)(\[( |x)\]\s+)?/i.exec(s))){
+      const a=m[1].length,b=a+m[2].length;
+      if(/[-*+]/.test(m[2])&&!on&&!mdSrc)out.push(Decoration.replace({widget:new Bul()}).range(ln.from+a,ln.from+b));
+      else out.push(mk("md-lm").range(ln.from+a,ln.from+b));
+      if(m[4]){const c=b+m[3].length;
+        if(!on&&!mdSrc)out.push(Decoration.replace({widget:new Chk(m[5].toLowerCase()==="x")}).range(ln.from+c,ln.from+c+3));
+        else out.push(mk("md-lm").range(ln.from+c,ln.from+c+3))}
+      inl(m[0].length);continue;
+    }
+    inl(0);
+  }
+  return Decoration.set(out,true);
+}
+const mdLive=ViewPlugin.fromClass(class{
+  constructor(v){this.decorations=mdBuild(v.state)}
+  update(u){if(u.docChanged||u.selectionSet||u.transactions.some(t=>t.annotation(MdRef)))this.decorations=mdBuild(u.state)}
+},{decorations:p=>p.decorations});
+
+const mdWrap=m=>v=>{
+  const r=v.state.selection.main,b=v.state.sliceDoc(r.from-m.length,r.from),a=v.state.sliceDoc(r.to,r.to+m.length);
+  if(b===m&&a===m)v.dispatch({changes:[{from:r.from-m.length,to:r.from},{from:r.to,to:r.to+m.length}],selection:{anchor:r.from-m.length,head:r.to-m.length}});
+  else v.dispatch({changes:[{from:r.from,insert:m},{from:r.to,insert:m}],selection:{anchor:r.from+m.length,head:r.to+m.length}});
+  return true;
+};
+function mdEnter(v){   // Enter continues a list; Enter on an empty item ends it
+  const sel=v.state.selection.main;if(!sel.empty)return false;
+  const ln=v.state.doc.lineAt(sel.head),m=/^(\s*)([-*+]|(\d+)([.)]))(\s+)(\[[ x]\]\s+)?/i.exec(ln.text);
+  if(!m||sel.head<ln.from+m[0].length)return false;
+  if(ln.text.length===m[0].length){v.dispatch({changes:{from:ln.from,to:ln.to,insert:m[1]},selection:{anchor:ln.from+m[1].length}});return true}
+  const ins="\n"+m[1]+(m[3]?(+m[3]+1)+m[4]:m[2])+m[5]+(m[6]?"[ ] ":"");
+  v.dispatch({changes:{from:sel.head,insert:ins},selection:{anchor:sel.head+ins.length},scrollIntoView:true,userEvent:"input"});return true;
+}
+function mdIndent(v,d){
+  const ln=v.state.doc.lineAt(v.state.selection.main.head);if(!/^\s*([-*+]|\d+[.)])\s/.test(ln.text))return false;
+  if(d>0)v.dispatch({changes:{from:ln.from,insert:"  "}});
+  else{const k=/^ {1,2}/.exec(ln.text);if(k)v.dispatch({changes:{from:ln.from,to:ln.from+k[0].length}})}
+  return true;
+}
+// Ctrl/⌘+click a link: web links open a tab; relative links to other .md files open in this pane
+async function openLink(h){
+  try{
+    if(/^(https?:|mailto:)/i.test(h))return void window.open(h,"_blank","noopener,noreferrer");
+    if(!h||h[0]==="#"||!root||!nPath)return;
+    const segs=nPath.split("/").filter(Boolean);segs.pop();
+    for(const p of decodeURI(h.split("#")[0]).split("/")){if(p==="..")segs.pop();else if(p&&p!==".")segs.push(p)}
+    const f=segs[segs.length-1];if(!f||!isMd(f))return;
+    let d=root;for(const s of segs.slice(0,-1))d=await d.getDirectoryHandle(s);
+    await openNote(await d.getFileHandle(f),"/"+segs.join("/"));
+  }catch(e){alert("Couldn't open "+h+": "+(e.message||e.name))}
+}
+const makeMdState=doc=>EditorState.create({doc,extensions:[history(),drawSelection(),lineNumbers(),highlightActiveLineGutter(),EditorView.lineWrapping,mdLive,EditorView.contentAttributes.of({spellcheck:opt.spell?"true":"false"}),
+  EditorView.domEventHandlers({mousedown:e=>{
+    if(!(e.ctrlKey||e.metaKey))return false;const a=e.target.closest&&e.target.closest(".md-a");
+    if(!a)return false;e.preventDefault();openLink(a.dataset.href);return true}}),
+  keymap.of([{key:"Mod-s",run:()=>{saveNote();return true},preventDefault:true},{key:"Mod-/",run:()=>{setMdSrc(!mdSrc);return true},preventDefault:true},
+    {key:"Mod-b",run:mdWrap("**"),preventDefault:true},{key:"Mod-i",run:mdWrap("*"),preventDefault:true},{key:"Enter",run:mdEnter},
+    {key:"Tab",run:v=>mdIndent(v,1),shift:v=>mdIndent(v,-1)},...historyKeymap,...defaultKeymap]),
+  EditorView.updateListener.of(u=>{if(u.docChanged){nDirty=true;noteTitle()}})]});
+const mdView=new EditorView({parent:$("mdEd"),state:makeMdState("")});
+
+function noteTitle(){$("nName").textContent=(nDirty?"● ":"")+(nh?nh.name:"")}
+function syncMode(){
+  $("mdEd").classList.toggle("src",mdSrc);
+  $("nMd").classList.toggle("on",mdSrc);
+}
+function setMdSrc(v){mdSrc=v;try{localStorage.setItem("bf_nmode",v?"src":"live")}catch(e){}syncMode();mdView.dispatch({annotations:MdRef.of(1)});mdView.requestMeasure();mdView.focus()}
+function applyNotes(){syncMode();mdView.requestMeasure()}
+async function openNote(h,p,skipGuard){
+  if(nh&&!skipGuard){   // re-clicking the note you are already editing, with nothing unsaved, needs no prompt
+    const same=await h.isSameEntry(nh).catch(()=>false);
+    if(!(same&&!nDirty)&&!await guardNote("opening "+h.name))return;
+  }
+  const text=norm(await (await h.getFile()).text());
+  nh=h;nPath=p||null;mdView.setState(makeMdState(text));nDirty=false;
+  $("notes").hidden=false;applyNotes();noteTitle();renderTree();mdView.focus();
+}
+async function saveNote(){
+  if(!nh)return false;
+  try{
+    if(await nh.queryPermission({mode:"readwrite"})!=="granted"&&await nh.requestPermission({mode:"readwrite"})!=="granted")return false;
+    await writeTo(nh,mdView.state.doc.toString());nDirty=false;noteTitle();
+    const b=$("nSave");b.textContent="Saved ✓";setTimeout(()=>b.textContent="Save",1200);
+    return true;
+  }catch(e){failed("save the note",e);return false}
+}
+// Same Save / Don't Save / Cancel prompt as the screenplay. true = OK to leave the note; a cancelled or failed save aborts.
+async function guardNote(what){
+  const r=await askUnsaved(what,!nDirty,nh.name);
+  if(r==="cancel")return false;
+  if(r==="save")return await saveNote();
+  return true;
+}
+$("nSave").onclick=saveNote;
+$("nX").onclick=async()=>{if(!await guardNote("closing "+nh.name))return;nh=null;nPath=null;nDirty=false;$("notes").hidden=true;renderTree()};
+$("nMd").onclick=()=>setMdSrc(!mdSrc);
+$("notes").addEventListener("keydown",e=>{   // keep Ctrl+S from reaching the screenplay's Save
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();e.stopPropagation();saveNote()}
+});
+$("nSplit").onpointerdown=e=>{   // drag the docked pane's left edge to resize
+  const n=$("notes"),box=$("main").getBoundingClientRect();
+  const mv=ev=>{n.style.flexBasis=Math.max(260,Math.min(box.width-300,box.right-ev.clientX))+"px"};
+  const up=()=>{removeEventListener("pointermove",mv);removeEventListener("pointerup",up);view.requestMeasure();mdView.requestMeasure()};
+  addEventListener("pointermove",mv);addEventListener("pointerup",up);e.preventDefault();
+};
+// ── outliner resize: drag the right edge (double-click resets to 200px); the width is remembered ──
+{
+  const side=$("side"),MIN=150,DEF=200,setW=w=>side.style.setProperty("--sideW",w+"px");
+  const maxW=()=>Math.max(MIN,Math.min(520,$("main").getBoundingClientRect().width-320));
+  const saved=+localStorage.getItem("bf_sidew");if(saved>=MIN&&saved<=520)setW(saved);
+  const remeasure=()=>{view.requestMeasure();mdView.requestMeasure()};
+  $("sideSplit").onpointerdown=e=>{
+    const sp=$("sideSplit"),left=side.getBoundingClientRect().left;let w=side.getBoundingClientRect().width;sp.classList.add("drag");
+    const mv=ev=>{w=Math.round(Math.max(MIN,Math.min(maxW(),ev.clientX-left)));setW(w)};
+    const up=()=>{removeEventListener("pointermove",mv);removeEventListener("pointerup",up);sp.classList.remove("drag");
+      try{localStorage.setItem("bf_sidew",String(w))}catch(e){}remeasure()};
+    addEventListener("pointermove",mv);addEventListener("pointerup",up);e.preventDefault();
+  };
+  $("sideSplit").ondblclick=()=>{side.style.removeProperty("--sideW");try{localStorage.removeItem("bf_sidew")}catch(e){}remeasure()};
+}
+addEventListener("beforeunload",e=>{if(nDirty){e.preventDefault();e.returnValue=""}});
+
 // ── 8. LICENSES ──
 $("lt").textContent="MIT License\n\nCopyright (c) 2026 ronin-on-linux\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\nThis project includes third-party software components licensed under open source licenses.\n---\n\nBamboo Fountain utilizes components from Fountain.\n\nMIT License\n\nCopyright (c) 2012 Nima Yousefi & John August\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\n\nBamboo Fountain utilizes components from CodeMirror 6.\n\nMIT License\n\nCopyright (C) 2018 by Marijn Haverbeke <marijn@haverbeke.berlin>, Adrian Heine <mail@adrianheine.de>, and others\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\n\nBamboo Fountain utilizes components from nspell.\n\nMIT License\n\nCopyright (c) 2015 Titus Wormer <tituswormer@gmail.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\n\nBamboo Fountain utilizes the English (en) Hunspell spelling dictionary from dictionary-en, derived from SCOWL.\n\nCopyright 2000-2018 by Kevin Atkinson, and others.\n\nFull license terms: https://github.com/wooorm/dictionaries/blob/main/dictionaries/en/license";
-const spellLbl=()=>{$("sSpell").textContent="Spell check: "+(opt.spell?"on":"off")};spellLbl();
-$("sSpell").onclick=()=>{opt.spell=!opt.spell;try{localStorage.setItem("bf_opts",JSON.stringify(opt))}catch(e){}spellLbl();closeMenu();respell(view)};
+const spellLbl=()=>{$("sSpell").textContent="Spell check: "+(opt.spell?"on":"off");$("spBtn").classList.toggle("on",!!opt.spell);mdView.contentDOM.setAttribute("spellcheck",opt.spell?"true":"false")};spellLbl();
+$("sSpell").onclick=$("spBtn").onclick=()=>{opt.spell=!opt.spell;try{localStorage.setItem("bf_opts",JSON.stringify(opt))}catch(e){}spellLbl();closeMenu();respell(view)};
 const lm=$("lm"),closeLic=()=>lm.classList.remove("show");
 $("sLic").onclick=()=>{lm.classList.add("show");lm.scrollTop=0};$("lx").onclick=closeLic;
 lm.onclick=e=>{if(e.target===lm)closeLic()};addEventListener("keydown",e=>{if(e.key==="Escape")closeLic()});
@@ -1025,12 +1433,59 @@ chrome();
 
 // ── KEYBINDINGS DIALOG ──
 const KB=[["Editing",[["Tab","Cycle line type forward"],["Shift+Tab","Cycle line type backward"],["Enter","New line"],["Ctrl/⌘+B","Bold"],["Ctrl/⌘+I","Italic"],["Ctrl/⌘+U","Underline"],["Ctrl/⌘+Z","Undo"],["Ctrl/⌘+Shift+Z / Ctrl+Y","Redo"]]],
- ["File",[["Ctrl/⌘+O","Open"],["Ctrl/⌘+S","Save"],["Ctrl/⌘+Shift+S","Save As"]]],
+ ["File",[["Ctrl/⌘+O","Open"],["Ctrl/⌘+S","Save"],["Ctrl/⌘+Shift+S","Save As"],["Ctrl/⌘+S in a note","Save the note"],["Ctrl/⌘+/ in a note","Show / hide all Markdown"]]],
  ["View",[["Ctrl/⌘+/","Show / hide all Fountain markdown"],["Ctrl/⌘+\\","Show / hide outline"],["Esc","Close dialog"]]]];
 $("kl").innerHTML=KB.map(([h,r])=>`<div class="kh">${h}</div>`+r.map(([k,d])=>`<div class="kr"><span>${d}</span><kbd>${k}</kbd></div>`).join("")).join("");
 const km=$("km"),closeKb=()=>km.classList.remove("show");
 $("kbBtn").onclick=()=>{km.classList.add("show");km.scrollTop=0};$("kx").onclick=closeKb;
 km.onclick=e=>{if(e.target===km)closeKb()};addEventListener("keydown",e=>{if(e.key==="Escape")closeKb()});
+// ── DISCOVER SCRIPTS DIALOG ──
+const DS_BASE="https://assets.scriptslug.com/live/pdf/scripts/";
+const DS=[
+ ["Craig Mazin",[["403","How to Write a Movie","https://www.youtube.com/watch?v=i27IKil-LXw"]]],
+ ["Chernobyl (2019)",[["101","1:23:45","chernobyl-101-11-23-45-2019.pdf?v=1745342325"],["102","Please Remain Calm","chernobyl-102-please-remain-calm-2019.pdf?v=1745342325"],["103","Open Wide, O Earth","chernobyl-103-open-wide-o-earth-2019.pdf?v=1745342325"],["104","The Happiness of All Mankind","chernobyl-104-the-happiness-of-all-mankind-2019.pdf?v=1745342325"],["105","Vichnaya Pamyat","chernobyl-105-vichnaya-pamyat-2019.pdf?v=1745342326"]]],
+ ["Andor",[["209","Welcome to the Rebellion","andor-209-welcome-to-the-rebellion-2025.pdf?v=1772524031"]]],
+ ["Shogun",[["101","Anjin","shogun-101-anjin-2024.pdf?v=1745342204"]]],
+ ["The Social Network",[["","Read screenplay","the-social-network-2010.pdf?v=1729115039"]]],
+ ["The Dark Knight",[["","Read screenplay","the-dark-knight-2008.pdf?v=1729115013"]]]];
+const dsLink=(href,inner)=>`<a class="dsb" href="${href}" target="_blank" rel="noopener noreferrer">${inner}</a>`;
+$("dsl").innerHTML=`<div class="dp">Recommended talks and screenplays (PDFs from ScriptSlug). Every link opens in a new tab.</div>`
+  +DS.map(([h,l])=>`<h4>${h}</h4><div class="dsr">${l.map(([n,t,u])=>dsLink(/^https?:/.test(u)?u:DS_BASE+u,(n?`<span class="dsn">${n}</span>`:"")+t)).join("")}</div>`).join("")
+  +`<div class="dsf">${dsLink("https://scriptslug.com","Browse ScriptSlug.com ↗")}</div>`;
+const dsm=$("dsm"),closeDs=()=>dsm.classList.remove("show");
+$("discoverBtn").onclick=e=>{e.preventDefault();dsm.classList.add("show");dsm.scrollTop=0};$("dsx").onclick=closeDs;
+dsm.onclick=e=>{if(e.target===dsm)closeDs()};addEventListener("keydown",e=>{if(e.key==="Escape"&&dsm.classList.contains("show")){closeDs();e.stopImmediatePropagation()}});
+// ── STARTUP DIALOG: shown on every launch. Each choice reuses the existing action it names. ──
+const stm=$("stm"),closeStart=()=>stm.classList.remove("show");
+const START=[
+ ["new","New","Start a screenplay or a note"],
+ ["folder","Open project folder","Browse .fountain and .md files in a folder"],
+ ["file","Open file","Open a screenplay or note from disk"],
+ null,
+ ["discover","Discover Scripts","Recommended talks and screenplays"],
+ ["learn","Learn Fountain","The Fountain syntax guide ↗"],
+ ["example","Open example fountain","Load a short sample screenplay"]];
+$("stl").innerHTML=START.map(r=>!r?`<div class="sts"></div>`
+  :r[0]==="learn"?`<a class="stb" data-a="learn" href="https://fountain.io/syntax/" target="_blank" rel="noopener noreferrer"><b>${r[1]}</b><span>${r[2]}</span></a>`
+  :`<button class="stb" data-a="${r[0]}"${r[0]==="folder"&&!DIRP?' disabled title="Opening folders needs Chrome, Edge or Opera"':""}><b>${r[1]}</b><span>${r[2]}</span></button>`).join("");
+async function openExample(){
+  if(!await guard("opening the example"))return;        // same save / don't save prompt as New and Open
+  loadDoc(SAMPLE,0);setName("the-sandwiches.fountain");
+}
+stm.onclick=e=>{
+  if(e.target===stm)return closeStart();
+  const b=e.target.closest("[data-a]");if(!b||b.disabled)return;
+  const a=b.dataset.a;
+  if(a==="learn")return;                                  // a real link: opens the guide in a new tab and this dialog stays
+  if(a==="discover"){$("discoverBtn").click();return}     // opens on top of this dialog; closing it brings you back here
+  closeStart();
+  if(a==="new")$("new").click();                          // the top New button (screenplay / note chooser)
+  else if(a==="folder"){setSide(false);pickFolder()}      // the file tree's Open folder; make sure the outliner is expanded to show it
+  else if(a==="file")openFile();                          // the top Open button
+  else if(a==="example")openExample();
+};
+$("stx").onclick=closeStart;addEventListener("keydown",e=>{if(e.key==="Escape")closeStart()});
+stm.classList.add("show");stm.querySelector(".stb").focus();setTimeout(()=>{if(stm.classList.contains("show"))stm.querySelector(".stb").focus()},350);   // Enter = New
 // ── PWA: service worker, theme-color sync, open .fountain/.txt files launched from the OS ──
 if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost"||location.hostname==="127.0.0.1")){
   addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(e=>console.warn("SW registration failed",e)));
@@ -1039,7 +1494,8 @@ if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostnam
  sync();new MutationObserver(sync).observe(document.documentElement,{attributes:true});}
 if("launchQueue" in window){
   launchQueue.setConsumer(async p=>{
-    const h=p.files&&p.files[0];if(!h)return;
+    const h=p.files&&p.files[0];if(!h)return;closeStart();
+  if(isMd(h.name)){await openNote(h,null);return}
     try{if(!(await guard("opening "+h.name)))return;
       loadDoc(norm(await (await h.getFile()).text()),0);if(FSA)setHandle(h);setName(h.name)}catch(e){console.warn(e)}
   });
