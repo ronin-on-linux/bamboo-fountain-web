@@ -28,7 +28,8 @@ html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%}
 <script type="importmap">{"imports":{
 "@codemirror/state":"https://esm.sh/@codemirror/state@6.4.1",
 "@codemirror/view":"https://esm.sh/@codemirror/view@6.26.3?deps=@codemirror/state@6.4.1",
-"@codemirror/commands":"https://esm.sh/@codemirror/commands@6.5.0?deps=@codemirror/state@6.4.1,@codemirror/view@6.26.3"}}</script>
+"@codemirror/commands":"https://esm.sh/@codemirror/commands@6.5.0?deps=@codemirror/state@6.4.1,@codemirror/view@6.26.3",
+"nspell":"https://esm.sh/nspell@2.1.5"}}</script>
 <style>
 :root{--bg:#111010;--bar:#0e0e0e;--bd:#1e1e1e;--tx:#ddd5c5;--mu:#666;--ac:#3dba7a;--ch:#9ee8c0;--tr:#2a8a55;--ly:#56c8d8}
 :root[data-t=light]{--bg:#f0ece4;--bar:#e8e4dc;--bd:#d0cac0;--tx:#1a1a1a;--mu:#999;--ac:#1a7a50;--ch:#0f3d2a;--tr:#2a6040;--ly:#0e4a5a}
@@ -109,6 +110,12 @@ button:hover{color:var(--tx)}button.on{background:var(--ac);border-color:var(--a
 .so{display:flex;gap:16px;align-items:center;margin-top:16px;padding-top:10px;border-top:1px solid var(--bd);color:var(--mu)}.so input{width:58px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:4px;padding:3px 6px;font:inherit}
 #learnFountain{background:transparent;color:var(--mu);border:1px solid var(--bd);border-radius:5px;padding:4px 9px;font:inherit;text-transform:uppercase;letter-spacing:.06em;text-decoration:none;flex-shrink:0;white-space:nowrap}#learnFountain:hover{color:var(--ac);border-color:var(--ac)}
 #kc{max-width:460px}#kc .kr{display:flex;justify-content:space-between;gap:16px;padding:5px 0;border-bottom:1px solid var(--bd);color:var(--tx)}#kc .kr:last-child{border:0}#kc .kh{margin:12px 0 2px;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;font-size:10px}#kc kbd{font:inherit;color:var(--ac);white-space:nowrap}
+.spell{text-decoration:underline wavy #e5484d;text-decoration-thickness:1px;text-underline-offset:3px;text-decoration-skip-ink:none}
+#sSpell{cursor:pointer}#sSpell:hover{color:var(--tx);text-decoration:underline dotted}
+#spm{position:fixed;z-index:30;min-width:160px;max-width:260px;background:var(--bar);border:1px solid var(--bd);border-radius:8px;padding:4px;box-shadow:0 8px 28px #0006;font-size:11px;text-transform:none;user-select:none}
+#spm div{padding:6px 10px;border-radius:5px;cursor:pointer;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#spm div:hover{background:color-mix(in srgb,var(--ac) 25%,transparent)}#spm .sg{font-weight:700}#spm .mu{color:var(--mu);cursor:default}#spm .mu:hover{background:none}
+#spm hr{border:0;border-top:1px solid var(--bd);margin:4px 0}
 </style></head><body>
 <div id="app">
  <div class="bar"><button id="outBtn" title="Show / hide outline (Ctrl+\)">☰</button><b style="color:var(--ac)">Bamboo Fountain</b><span class="vsep"></span>
@@ -127,7 +134,7 @@ button:hover{color:var(--tx)}button.on{background:var(--ac);border-color:var(--a
 <div id="lm"><div id="lc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Licenses</b><span class="sp"></span><button id="lx">×</button></div><pre id="lt"></pre></div></div>
   <div id="main"><div id="side"><div id="sideHead"><span>Outline</span><button id="sideToggle" title="Collapse outline">‹</button></div><div id="sideList"></div></div><div id="ed"></div></div>
  <div class="bar bot" id="fmt"></div>
- <div class="bar bot" id="stat" style="font-size:9px;color:var(--mu)"><span id="st1"></span><span class="sp"></span><span id="st2"><span id="sFile"></span><span id="sLoc"></span><span id="sBak"></span><span id="sLic" title="Open-source licenses">Licenses</span></span></div>
+ <div class="bar bot" id="stat" style="font-size:9px;color:var(--mu)"><span id="st1"></span><span class="sp"></span><span id="st2"><span id="sFile"></span><span id="sLoc"></span><span id="sBak"></span><span id="sSpell" title="Turn spell check on or off"></span><span id="sLic" title="Open-source licenses">Licenses</span></span></div>
 </div>
 <script type="module">
 import {EditorState,EditorSelection,RangeSetBuilder,Annotation} from "@codemirror/state";
@@ -173,7 +180,7 @@ class Num extends WidgetType{constructor(n,side){super();this.n=n;this.side=side
 const hide=Decoration.replace({}),dim=Decoration.mark({class:"mkr"}),mk=c=>Decoration.mark({class:c});
 const EM={"***":"b i","**":"b","*":"i","_":"u"};
 let info={T:[],L:[],scenes:[]},showNums=true;
-let opt={nums:true,numStyle:"1",sceneBold:true,sceneUl:false,titleBold:false,titleUl:false,titleCaps:false};
+let opt={spell:true,nums:true,numStyle:"1",sceneBold:true,sceneUl:false,titleBold:false,titleUl:false,titleCaps:false};
 try{Object.assign(opt,JSON.parse(localStorage.getItem("bf_opts")||"{}"))}catch(e){}
 showNums=opt.nums;
 const snFmt=n=>opt.numStyle==="101"?String(100+n):String(n);   // scene number text for the chosen style (editor + PDF)
@@ -221,6 +228,117 @@ const live=ViewPlugin.fromClass(class{
   constructor(v){this.decorations=build(v.state)}
   update(u){if(u.docChanged||u.selectionSet||u.viewportChanged||u.transactions.some(t=>t.annotation(Pend))){this.decorations=build(u.state);queueMicrotask(chrome)}}
 },{decorations:p=>p.decorations});
+
+// ── 2b. SPELLCHECK ──
+// nspell (Hunspell in JS) + a pinned en_US dictionary. Misspellings are ordinary mark decorations, so nothing depends on the browser's own
+// spellcheck or on contenteditable quirks. A correction is one view.dispatch({changes}) using positions looked up at click time.
+const DICT_BASE="https://cdn.jsdelivr.net/npm/dictionary-en@4.0.0/";   // keep in sync with DICT_URLS in sw.js
+const Respell=Annotation.define();
+let spell=null,userWords=[],ignored=new Set(),known=new Set(),bone=[],okCache=new Map();
+try{userWords=JSON.parse(localStorage.getItem("bf_dict")||"[]")}catch(e){}
+function* spellWords(text){   // {a,b,w}: offsets within text, w = word normalised for lookup (curly apostrophes -> straight)
+  const re=/[\p{L}\p{N}][\p{L}\p{N}'’]*/gu;let m;
+  while((m=re.exec(text))){
+    const t=m[0].replace(/['’]+$/,"");
+    if(t.length<2||/\p{N}/u.test(t))continue;   // single letters and anything with digits (3rd, 2nd, 4K) are never flagged
+    yield{a:m.index,b:m.index+t.length,w:t.replace(/’/g,"'")};
+  }
+}
+const inBone=p=>bone.some(([a,b])=>p>=a&&p<b);
+const urlish=(text,a)=>/[@/\\]|\w\.\w/.test(/\S*$/.exec(text.slice(0,a))[0]+/^\S*/.exec(text.slice(a))[0]);
+const isBad=w=>{
+  if(!spell)return false;
+  const lc=w.toLowerCase();
+  if(w===w.toUpperCase()||known.has(lc)||ignored.has(lc))return false;   // ALL CAPS = cues, headings, acronyms
+  let ok=okCache.get(w);if(ok===undefined){ok=spell.correct(w);okCache.set(w,ok)}
+  return !ok;
+};
+// Names used on character cues and scene headings are treated as known words, so "Maria" in action lines isn't flagged.
+function learn(){known=new Set();
+  info.T.forEach((t,i)=>{if(t==="character"||t==="scene")for(const x of spellWords(info.L[i]||""))known.add(x.w.toLowerCase())});}
+const spellMark=Decoration.mark({class:"spell"});
+function spellDeco(view,state){
+  if(!spell||!opt.spell)return Decoration.none;
+  const d=state.doc,sel=state.selection.main,out=[];let last=0;
+  for(const r of view.visibleRanges)for(let n=d.lineAt(r.from).number,e=d.lineAt(r.to).number;n<=e;n++){
+    if(n<=last)continue;last=n;
+    const ln=d.line(n),t=info.T[n-1];
+    if(!ln.text||t==="title"||t==="pagebreak")continue;
+    for(const x of spellWords(ln.text)){
+      const from=ln.from+x.a,to=ln.from+x.b;
+      if(sel.empty&&sel.head>=from&&sel.head<=to)continue;   // never flag the word still being typed
+      if(isBad(x.w)&&!inBone(from)&&!urlish(ln.text,x.a))out.push(spellMark.range(from,to));
+    }
+  }
+  return Decoration.set(out,true);
+}
+const respell=v=>v.dispatch({annotations:Respell.of(1)});
+const spellPlugin=ViewPlugin.fromClass(class{
+  constructor(v){this.refresh(v,v.state,true)}
+  update(u){
+    const forced=u.transactions.some(t=>t.annotation(Respell));
+    if(u.docChanged)closeMenu();
+    if(u.docChanged||u.selectionSet||u.viewportChanged||forced)this.refresh(u.view,u.state,u.docChanged||forced);
+  }
+  refresh(v,state,docLevel){
+    if(docLevel){bone=[...state.doc.toString().matchAll(BONE)].map(m=>[m.index,m.index+m[0].length]);learn()}
+    this.decorations=spellDeco(v,state);
+  }
+},{decorations:p=>p.decorations});
+
+// The word under a document position, found by rescanning that one line (so it is never stale).
+function wordAt(doc,pos){
+  const ln=doc.lineAt(pos),rel=pos-ln.from;
+  for(const x of spellWords(ln.text))if(rel>=x.a&&rel<=x.b)return{from:ln.from+x.a,to:ln.from+x.b,w:x.w,text:ln.text.slice(x.a,x.b),line:ln.text,a:x.a};
+  return null;
+}
+const matchCase=(src,s)=>/^\p{Lu}/u.test(src)&&!/^\p{Lu}/u.test(s)?s[0].toUpperCase()+s.slice(1):s;
+function applyFix(view,hit,fix){
+  const d=view.state.doc;let{from,to}=hit;
+  if(d.sliceString(from,to)!==hit.text){   // document moved since the menu opened: re-find the word, or do nothing
+    const again=wordAt(d,Math.min(from,d.length));if(!again||again.text!==hit.text)return;from=again.from;to=again.to}
+  if(hit.text.includes("’"))fix=fix.replace(/'/g,"’");
+  view.dispatch({changes:{from,to,insert:fix},selection:{anchor:from+fix.length},userEvent:"input.spellcheck",scrollIntoView:true});
+  view.focus();
+}
+function addWord(view,w){
+  spell.add(w);
+  if(!userWords.includes(w)){userWords.push(w);try{localStorage.setItem("bf_dict",JSON.stringify(userWords))}catch(e){}}
+  okCache.clear();respell(view);view.focus();
+}
+let menu=null;
+const closeMenu=()=>{if(menu){menu.remove();menu=null}};
+function openMenu(view,x,y,hit){
+  closeMenu();
+  const sug=spell.suggest(hit.w).slice(0,6).map(s=>matchCase(hit.text,s));
+  menu=document.createElement("div");menu.id="spm";
+  const item=(label,cls,fn)=>{const e=document.createElement("div");e.textContent=label;if(cls)e.className=cls;if(fn)e.onclick=()=>{closeMenu();fn()};menu.appendChild(e)};
+  if(sug.length)sug.forEach(s=>item(s,"sg",()=>applyFix(view,hit,s)));else item("No suggestions","mu");
+  menu.appendChild(document.createElement("hr"));
+  item("Add to dictionary","",()=>addWord(view,hit.w));
+  item("Ignore","",()=>{ignored.add(hit.w.toLowerCase());respell(view);view.focus()});
+  menu.onpointerdown=e=>e.preventDefault();   // clicking the menu must not steal focus or the selection from the editor
+  document.body.appendChild(menu);
+  const r=menu.getBoundingClientRect();
+  menu.style.left=Math.max(4,Math.min(x,innerWidth-r.width-4))+"px";menu.style.top=Math.max(4,Math.min(y,innerHeight-r.height-4))+"px";
+}
+addEventListener("pointerdown",e=>{if(menu&&!menu.contains(e.target))closeMenu()},true);
+addEventListener("keydown",e=>{if(e.key==="Escape")closeMenu()});
+addEventListener("scroll",closeMenu,true);addEventListener("resize",closeMenu);addEventListener("blur",closeMenu);
+const spellMenu=EditorView.domEventHandlers({contextmenu(e,view){
+  if(!spell||!opt.spell)return false;                       // otherwise leave the browser's own menu alone
+  const pos=view.posAtCoords({x:e.clientX,y:e.clientY});if(pos==null)return false;
+  const hit=wordAt(view.state.doc,pos);
+  if(!hit||inBone(hit.from)||!isBad(hit.w)||urlish(hit.line,hit.a))return false;
+  e.preventDefault();openMenu(view,e.clientX,e.clientY,hit);return true;
+}});
+async function loadSpell(view){   // deferred and failure-proof: if it can't load, the editor simply has no spellcheck
+  try{
+    const get=f=>fetch(DICT_BASE+f).then(r=>{if(!r.ok)throw new Error(f+" "+r.status);return r.text()});
+    const [{default:nspell},aff,dic]=await Promise.all([import("nspell"),get("index.aff"),get("index.dic")]);
+    spell=nspell(aff,dic);userWords.forEach(w=>spell.add(w));respell(view);
+  }catch(e){console.warn("Spellcheck unavailable:",e)}
+}
 
 // ── 3. TYPE CHANGES = TEXT CHANGES (force prefixes replace the old hidden "manual" flag) ──
 const TYPES=["action","scene","character","dialogue","parenthetical","transition","centered","lyric"];
@@ -369,7 +487,7 @@ const toggleMark=kind=>v=>{
   v.dispatch({changes,selection:EditorSelection.create(ranges),userEvent:"input.format",scrollIntoView:true});
   return true;
 };
-const makeState=doc=>EditorState.create({doc,extensions:[history(),drawSelection(),lineNumbers(),highlightActiveLineGutter(),EditorView.lineWrapping,live,
+const makeState=doc=>EditorState.create({doc,extensions:[history(),drawSelection(),lineNumbers(),highlightActiveLineGutter(),EditorView.lineWrapping,live,spellPlugin,spellMenu,EditorView.contentAttributes.of({spellcheck:"false"}),
     keymap.of([{key:"Mod-b",run:toggleMark("b"),preventDefault:true},{key:"Mod-i",run:toggleMark("i"),preventDefault:true},{key:"Mod-u",run:toggleMark("u"),preventDefault:true},{key:"Enter",run:insertNewline},{key:"Tab",run:cycle(1),shift:cycle(-1)},{key:"Mod-/",run:()=>{toggleRaw();return true},preventDefault:true},{key:"Mod-\\",run:()=>{setSide(!$("side").classList.contains("c"));return true},preventDefault:true},...historyKeymap,...defaultKeymap]),
     EditorView.updateListener.of(u=>{
       if(pending&&(u.docChanged||u.selectionSet)){
@@ -379,6 +497,7 @@ const makeState=doc=>EditorState.create({doc,extensions:[history(),drawSelection
       }
       if(u.docChanged){if(!dirty){setDirty(true);queueMicrotask(chrome)}queueAutosave()}})]});
 const view=new EditorView({parent:document.getElementById("ed"),state:makeState(saved??SAMPLE)});
+setTimeout(()=>loadSpell(view),300);
 // Force the web font to load (browsers only fetch it lazily) and re-measure once it's ready
 if(document.fonts&&document.fonts.load){
   Promise.all(["12pt","bold 12pt","italic 12pt"].map(w=>document.fonts.load(w+" 'Courier Prime'")))
@@ -896,7 +1015,9 @@ $("sBak").onclick=async()=>{
 if(FSA)Promise.all([idbOp("readonly",st=>st.get("cur")),idbOp("readonly",st=>st.get("dir"))]).then(([h,v])=>{
   if(h&&!handle)handle=h;if(v&&v.d){bakDir=v.d;bakFor=v.n}bakState()});
 // ── 8. LICENSES ──
-$("lt").textContent="MIT License\n\nCopyright (c) 2026 ronin-on-linux\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\nThis project includes third-party software components licensed under open source licenses.\n---\n\nBamboo Fountain utilizes components from Fountain.\n\nMIT License\n\nCopyright (c) 2012 Nima Yousefi & John August\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.";
+$("lt").textContent="MIT License\n\nCopyright (c) 2026 ronin-on-linux\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\nThis project includes third-party software components licensed under open source licenses.\n---\n\nBamboo Fountain utilizes components from Fountain.\n\nMIT License\n\nCopyright (c) 2012 Nima Yousefi & John August\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\n\nBamboo Fountain utilizes components from CodeMirror 6.\n\nMIT License\n\nCopyright (C) 2018 by Marijn Haverbeke <marijn@haverbeke.berlin>, Adrian Heine <mail@adrianheine.de>, and others\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\n\nBamboo Fountain utilizes components from nspell.\n\nMIT License\n\nCopyright (c) 2015 Titus Wormer <tituswormer@gmail.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\n\nBamboo Fountain utilizes the English (en) Hunspell spelling dictionary from dictionary-en, derived from SCOWL.\n\nCopyright 2000-2018 by Kevin Atkinson, and others.\n\nFull license terms: https://github.com/wooorm/dictionaries/blob/main/dictionaries/en/license";
+const spellLbl=()=>{$("sSpell").textContent="Spell check: "+(opt.spell?"on":"off")};spellLbl();
+$("sSpell").onclick=()=>{opt.spell=!opt.spell;try{localStorage.setItem("bf_opts",JSON.stringify(opt))}catch(e){}spellLbl();closeMenu();respell(view)};
 const lm=$("lm"),closeLic=()=>lm.classList.remove("show");
 $("sLic").onclick=()=>{lm.classList.add("show");lm.scrollTop=0};$("lx").onclick=closeLic;
 lm.onclick=e=>{if(e.target===lm)closeLic()};addEventListener("keydown",e=>{if(e.key==="Escape")closeLic()});
