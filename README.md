@@ -7,15 +7,14 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 
 ## Future Developments
 - [ ] My next goal is to get a native qt linux desktop version started in development soon, with the aim of replicating and expanding the functionality of Bamboo Fountain, offering a fully featured screenplay writing software for creatives who prefer the open source ecosystem and dislike webkit/pwa/electron apps. (native app will be published under a separate git repo.)
-- [ ] Implement spell check.
-- [ ] Eventually integrate note encryption of some sort to keep users data safe.
+- [ ] Integrate note encryption of some sort to keep users data safe.
 
 > [!NOTE]
-> BUG! Save/open window dialogue theows an error on the website verison when using brave/brave-origin. Installing the PWA fixes this issue. Use PWA instead of in browser for the moment if the popup error is bothersome.
+> BUG! Save/open window dialogue occasionally throws an error on the website version when using brave/brave-origin. Installing the PWA fixes this issue. Use PWA instead of in browser for the moment if the popup error is bothersome.
 
 
 ## Current Features
-- Permissive MIT License
+- Permissive MIT License.
 - Open and save locally, with background autosave recovery to localStorage and manual backup functions.
 - 'Ctrl + S' and 'Ctrl + Shift + S' save and save as.
 - 'Ctrl + Z' and 'Ctrl + Y' undo/redo.
@@ -23,8 +22,9 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 - Intuitive Title Page and Screenplay editor, with live line formatting, rebuilt to fully support markdown in the editor.
 - Markdown and live rendered view alongside pdf preview with syntax highlights built on CodeMirror.
 - Dual dialogue supported in PDF export.
-- Duration and length estimate statistics/
-- Keybindings page.
+- Duration and length estimate statistics.
+- Keybindings help page.
+- English Spell Check.
 - Slick and simple UI with dynamic line id tags at bottom that reveal line type.
 - Multiple beautiful themes that are popular amongst linux users. Themes persist even if window is closed. Auto-theme detects your OS light or dark mode.
 - PDF and Fountain save/export.
