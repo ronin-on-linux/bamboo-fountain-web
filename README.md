@@ -3,7 +3,14 @@ Bamboo Fountain is an open source screenplay editor that includes all your basic
 
 bamboo-fountain-web provides a writing experience that is pleasantly simple, allowing you to feel at home with its theme-able UI, while being accessible from anywhere and offline. No server access, no cloud, no AI assistant features. Just deep, focused screenwriting.
 
-<img width="1201" height="898" alt="Document" src="https://github.com/user-attachments/assets/4de3bca1-af6a-44b6-8654-3b096084a45c" />
+## Live Rendered View
+<img width="1336" height="1026" alt="tokyo" src="https://github.com/user-attachments/assets/fb999d0d-ce5f-4154-8e06-0b4311668f67" />
+
+## Markdown Mode
+<img width="1336" height="1026" alt="markdown-mode" src="https://github.com/user-attachments/assets/c3755777-92e9-4ad4-94b3-2555307e24ee" />
+
+## Themes
+<img width="964" height="794" alt="themes-v2" src="https://github.com/user-attachments/assets/2214ebf8-4c9c-4a51-9c88-52e0d339b286" />
 
 ## Future Developments
 - [ ] My next goal is to get a native qt linux desktop version started in development soon, with the aim of replicating and expanding the functionality of Bamboo Fountain, offering a fully featured screenplay writing software for creatives who prefer the open source ecosystem and dislike webkit/pwa/electron apps. (native app will be published under a separate git repo.)
