@@ -6,10 +6,10 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 ## Live Formatting View
 <img width="1336" height="1026" alt="tokyo" src="https://github.com/user-attachments/assets/fb999d0d-ce5f-4154-8e06-0b4311668f67" />
 
-## Markdown Mode
+## Plain Text Markdown View
 <img width="1336" height="1026" alt="markdown-mode" src="https://github.com/user-attachments/assets/c3755777-92e9-4ad4-94b3-2555307e24ee" />
 
-## Fountain + Markdown-based Reference Notes Compatibiity
+## Fountain + Markdown-based Reference Notes Split Screen Compatibiity
 <img width="1920" height="1040" alt="Screenshot from 2026-10-03 23-05-31" src="https://github.com/user-attachments/assets/39be7c31-768b-476b-abcd-682a435599c5" />
 
 ## Themes
@@ -21,6 +21,7 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 - [ ] Support for Markdown file linking. (Would only be available if project folder has been opened.)
 - [ ] Support for rendering mermaid scripts for inline flowcharts.
 - [ ] Better file save/open protocol that is compatible with Firefox and Safari.
+- [ ] Support reorganization of scenes in the outliner.
 
 > [!NOTE]
 > BUG! Save/open window dialogue occasionally throws an error on the website version when using brave/brave-origin. Installing the PWA fixes this issue. Use PWA instead of in browser for the moment if the popup error is bothersome.
