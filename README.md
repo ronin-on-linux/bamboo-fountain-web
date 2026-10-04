@@ -22,6 +22,7 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 - [ ] Support for rendering mermaid scripts for inline flowcharts and graphs.
 - [ ] Better file save/open protocol that is compatible with Firefox and Safari.
 - [ ] Support reorganization of scenes in the outliner.
+- [ ] Support for fountain markdown within markdown notes - within a code excerpt.
 
 > [!NOTE]
 > BUG! Save/open window dialogue occasionally throws an error on the website version when using brave/brave-origin. Installing the PWA fixes this issue. Use PWA instead of in browser for the moment if the popup error is bothersome.
