@@ -34,6 +34,7 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 - Dual dialogue supported in PDF export.
 - Duration and length estimate statistics.
 - Keybindings help page.
+- PDF Watermarks.
 - English Spell Check (Basic).
 - Support for rendering normal .md notes with live rendering and markdown modes.
 - Split pane with capability for .md files.
