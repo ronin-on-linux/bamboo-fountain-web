@@ -762,7 +762,8 @@ $("tp").onclick=e=>{e.stopPropagation();const d=e.target.dataset;
 document.addEventListener("pointerdown",e=>{if(!$("tp").contains(e.target)&&e.target!==$("theme"))$("tp").classList.remove("show")});
 applyTheme();
 
-function download(txt,name){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/plain"}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+// The blob is deliberately application/octet-stream: with text/plain, Safari renames "x.fountain" to "x.fountain.txt".
+function download(txt,name){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"application/octet-stream"}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
 // File System Access API (Chrome/Edge/Opera, top-level page): lets us keep a handle to the opened/saved file.
 // Elsewhere (Firefox/Safari, iframes) we fall back to <input type=file> + download.
 const FSA=!!(window.showSaveFilePicker&&window.showOpenFilePicker)&&window.top===window.self;
@@ -903,7 +904,9 @@ async function save(){
 }
 
 $("save").onclick=save;$("saveas").onclick=saveAs;$("open").onclick=openFile;
+if(/^((?!chrome|chromium|android).)*safari/i.test(navigator.userAgent))$("file").removeAttribute("accept");
 $("file").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+  if(!/\.(fountain|txt|text|md|markdown|ft)$/i.test(f.name)&&!/^text\//.test(f.type)&&/\.\w+$/.test(f.name)&&!confirm(f.name+" doesn't look like a Fountain or text file. Open it anyway?"))return;
   loadDoc(norm(await f.text()),0);setName(f.name)};
 
 // PWA: double-clicking a .fountain file (manifest "file_handlers") delivers its handle here, so Save writes back to it.
