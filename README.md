@@ -18,9 +18,6 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 ## Future Developments
 - [ ] My next goal is to get a native qt linux desktop version started in development soon, with the aim of replicating and expanding the functionality of Bamboo Fountain, offering a fully featured screenplay writing software for creatives who prefer the open source ecosystem and dislike webkit/pwa/electron apps. (native app will be published under a separate git repo.)
 - [ ] Integrate note encryption of some sort to keep users data safe.
-- [x] support for rendering normal .md notes with live rendering and markdown modes.
-- [x] Split pane with floating capability for .md files.
-- [x] Open project folders in the bottom half of the outliner.
 
 > [!NOTE]
 > BUG! Save/open window dialogue occasionally throws an error on the website version when using brave/brave-origin. Installing the PWA fixes this issue. Use PWA instead of in browser for the moment if the popup error is bothersome.
@@ -37,12 +34,15 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 - Dual dialogue supported in PDF export.
 - Duration and length estimate statistics.
 - Keybindings help page.
-- English Spell Check.
+- English Spell Check (Basic).
+- Support for rendering normal .md notes with live rendering and markdown modes.
+- Split pane with capability for .md files.
+- Open project folders in the bottom half of the outliner.
 - Slick and simple UI with dynamic line id tags at bottom that reveal line type.
 - Multiple beautiful themes that are popular amongst linux users. Themes persist even if window is closed. Auto-theme detects your OS light or dark mode.
 - PDF and Fountain save/export.
 - #1# and #101# scene numbering in PDF export.
-- Press Tab to cycle your line through block types (Action, Scene, Character, etc).
+- Press Tab to cycle your line through block types. This forces the line to be whichever you pick despite its text (Action, Scene, Character, etc).
 - Hosted on GitHub Pages, but has built in PWA compatibility so you can install and use offline.
 
 > [!NOTE] 
