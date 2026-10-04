@@ -9,6 +9,9 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 ## Markdown Mode
 <img width="1336" height="1026" alt="markdown-mode" src="https://github.com/user-attachments/assets/c3755777-92e9-4ad4-94b3-2555307e24ee" />
 
+## Fountain + Markdown Side Notes Compatibiity
+<img width="1920" height="1040" alt="Screenshot from 2026-10-03 23-05-31" src="https://github.com/user-attachments/assets/39be7c31-768b-476b-abcd-682a435599c5" />
+
 ## Themes
 <img width="964" height="794" alt="themes-v2" src="https://github.com/user-attachments/assets/2214ebf8-4c9c-4a51-9c88-52e0d339b286" />
 
