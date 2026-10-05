@@ -16,7 +16,7 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 <img width="964" height="794" alt="themes-v2" src="https://github.com/user-attachments/assets/2214ebf8-4c9c-4a51-9c88-52e0d339b286" />
 
 ## Future Developments
-- [ ] My next goal is to get a native qt linux desktop version started in development soon, with the aim of replicating and expanding the functionality of Bamboo Fountain, offering a fully featured screenplay writing software for creatives who prefer the open source ecosystem and dislike webkit/pwa/electron apps. (native app will be published under a separate git repo.)
+- [ ] My next goal is to get a native qt linux desktop version completely built form scratch started in development soon, as a way to learn programming, with the aim of replicating and expanding the functionality of Bamboo Fountain Web, offering a fully featured screenplay writing software for creatives who prefer linux, the open source ecosystem and dislike webkit/pwa/electron apps. (native app will be published under a separate git repo.)
 - [ ] Integrate note encryption of some sort to keep users data safe.
 - [ ] Better file save/open protocol that is compatible with Firefox and Safari.
 - [ ] Support reorganization of scenes in the outliner.
