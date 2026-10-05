@@ -1,7 +1,7 @@
 /* Bamboo Fountain service worker
  * - Precaches the app shell + CodeMirror modules (from esm.sh) so the editor works offline.
  * - Bump VERSION whenever index.html changes to roll out an update. */
-const VERSION = 'v29';
+const VERSION = 'v51';
 const SHELL_CACHE = 'bf-shell-' + VERSION;
 const CDN_CACHE = 'bf-cdn-v1'; // CodeMirror URLs are version-pinned, so this cache can persist across app versions
 
@@ -20,6 +20,12 @@ const CDN_ENTRIES = [
   'https://esm.sh/@codemirror/commands@6.5.0?deps=@codemirror/state@6.4.1,@codemirror/view@6.26.3',
   'https://esm.sh/nspell@2.1.5'
 ];
+
+// Mermaid is shipped with the app (vendor/mermaid.min.js, ~2.5 MB) so diagrams work offline from the first launch. It is only downloaded and stored here:
+// the page does not run it until the person allows it. It lives in its own cache, named for the Mermaid version, so ordinary app updates (VERSION above)
+// don't re-download it. When you upgrade Mermaid, replace the file and change the version in this name.
+const VENDOR_CACHE = 'bf-vendor-mermaid-11.4.1';
+const MERMAID = './vendor/mermaid.min.js';
 
 // Spellcheck dictionary files (plain text, no imports to follow). Must match DICT_BASE in index.html
 const DICT_URLS = [
@@ -62,13 +68,20 @@ self.addEventListener('install', event => {
         if (r.ok) await cdn.put(u, r);
       }));
     } catch (e) { /* same: fetched and cached on first use instead */ }
+    try {   // best-effort like the CDN prefetch: a missing or failed download must not block installing the app
+      const v = await caches.open(VENDOR_CACHE);
+      if (!(await v.match(MERMAID))) {
+        const r = await fetch(MERMAID);
+        if (r.ok) await v.put(MERMAID, r);
+      }
+    } catch (e) { /* fetched and cached on first use instead */ }
     await self.skipWaiting();
   })());
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
-    const keep = [SHELL_CACHE, CDN_CACHE];
+    const keep = [SHELL_CACHE, CDN_CACHE, VENDOR_CACHE];
     for (const k of await caches.keys()) if (!keep.includes(k)) await caches.delete(k);
     await self.clients.claim();
   })());
@@ -107,6 +120,19 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Bundled Mermaid: cache first, never refreshed (its cache name carries the version).
+  if (url.origin === location.origin && url.pathname.endsWith('/vendor/mermaid.min.js')) {
+    event.respondWith((async () => {
+      const cache = await caches.open(VENDOR_CACHE);
+      const hit = await cache.match(req);
+      if (hit) return hit;
+      const res = await fetch(req);
+      if (res.ok) cache.put(req, res.clone());
+      return res;
+    })());
+    return;
+  }
+
   // Other same-origin assets: cache first, refresh in background.
   if (url.origin === location.origin) {
     event.respondWith((async () => {
@@ -120,3 +146,4 @@ self.addEventListener('fetch', event => {
     })());
   }
 });
+
