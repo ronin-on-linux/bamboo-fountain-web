@@ -156,15 +156,16 @@ button:hover{color:var(--tx)}button.on{background:var(--ac);border-color:var(--a
 #side.c #fileSec{display:none}
 #notes{position:relative;overflow:hidden;display:flex;flex-direction:column;background:var(--bar);min-width:0;flex:0 0 42%;padding:8px}
 #nCard{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--bg);border:1px solid color-mix(in srgb,var(--tx) 14%,var(--bd));border-radius:10px;overflow:hidden}
-#nHead{display:flex;gap:6px;align-items:center;padding:5px 8px;background:var(--bar);border-bottom:1px solid var(--bd);flex:none;user-select:none}
-#nName{color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;margin-right:auto}
+#nHead{display:grid;grid-template-columns:1fr minmax(60px,auto) 1fr;gap:6px;align-items:center;padding:5px 8px;background:var(--bar);border-bottom:1px solid var(--bd);flex:none;user-select:none}
+#nName{color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;text-align:center}
+.nl,.nr{display:flex;gap:6px;align-items:center}.nl{justify-self:start}.nr{justify-self:end}
 #nSplit{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:col-resize;z-index:2}#nSplit:hover{background:var(--ac);opacity:.4}
 #nBody{flex:1;min-height:0;display:flex;flex-direction:column}
 #mdEd{flex:1;min-height:0;position:relative;overflow:hidden}
 #mdEd .cm-editor{position:absolute!important;inset:0;height:auto!important;min-height:0!important}
 #mdEd .cm-scroller{overflow:auto!important;height:100%}
 #mdEd .cm-scroller,#mdEd .cm-content{font-family:'Courier Prime','Courier New',Courier,monospace!important}
-#mdEd{--ncb:color-mix(in srgb,var(--tx) 9%,transparent);--nh:rgba(255,208,0,.28);--nm:color-mix(in srgb,var(--tx) 55%,var(--bg))}
+#mdEd{--ncbd:color-mix(in srgb,var(--tx) 14%,var(--bd));--ncb:color-mix(in srgb,var(--tx) 9%,transparent);--nh:rgba(255,208,0,.28);--nm:color-mix(in srgb,var(--tx) 55%,var(--bg))}
 #mdEd .cm-content{max-width:700px;margin:0 auto!important;padding:1.5rem 1.5rem 6rem!important;font-size:12pt;line-height:1.5;color:var(--tx)}
 /* Obsidian-style reading: Obsidian's heading scale, plain text-coloured body, accent/theme-coloured links and quote bar, soft code chips.
    Per-theme heading/bold/italic/link/code/quote colours come from NP in the theme code (--h1..--h6, --nb, --ni, --nl, --nc, --nq). */
@@ -181,10 +182,83 @@ button:hover{color:var(--tx)}button.on{background:var(--ac);border-color:var(--a
 #mdEd .md-h .md-b,#mdEd .md-h .md-bi,#mdEd .md-h .md-i{color:inherit}
 #mdEd .md-s{text-decoration:line-through;color:var(--mu)}
 #mdEd .md-hl{background:var(--nh);border-radius:2px;padding:.05em 0}
+#mdEd .md-imgw{display:inline-block;max-width:100%;vertical-align:middle;cursor:pointer}
+#mdEd .md-imgw img{display:block;max-width:100%;height:auto;border-radius:8px}
+#mdEd .md-imgx{color:var(--mu);font-size:.85em;padding:.2em .6em;border:1px dashed var(--bd);border-radius:6px}
 #mdEd .md-c{font-family:'Courier Prime','Courier New',Courier,monospace;font-size:.9em;color:var(--nc);background:var(--ncb);border-radius:4px;padding:.1em .35em}
 #mdEd .md-a{color:var(--nl);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.18em}#mdEd .md-img{color:var(--nl);font-style:italic}
-#mdEd .cm-line.md-code{font:.9em/1.5 'Courier Prime','Courier New',Courier,monospace;color:var(--nc);background:var(--ncb);padding:0 1.1em!important}
-#mdEd .cm-line.md-fe{line-height:.7}
+#mdEd .md-wl{color:var(--nl);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.18em}#mdEd .md-wl-x{opacity:.65;text-decoration-style:dashed}
+#wlPop{position:fixed;z-index:60;background:var(--bar);border:1px solid var(--bd);border-radius:8px;box-shadow:0 8px 28px #0006;padding:3px;min-width:200px;max-width:340px;max-height:260px;overflow:auto;font-size:12px}
+#wlPop div{padding:4px 8px;border-radius:5px;cursor:pointer;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#wlPop small{color:var(--mu);margin-left:8px}
+#wlPop div.on{background:color-mix(in srgb,var(--tx) 12%,transparent)}
+#nBk:disabled{opacity:.35;cursor:default}
+#nBack{flex:none;max-height:34%;display:flex;flex-direction:column;border-top:1px solid var(--bd);background:var(--bar);font-size:12px;color:var(--mu)}
+#nBackHead{flex:none;padding:5px 10px;cursor:pointer;user-select:none;text-transform:uppercase;letter-spacing:.06em;font-size:10px}#nBackHead:hover{color:var(--tx)}
+#nBackList{overflow:auto;padding:0 10px 6px}#nBackList[hidden]{display:none}
+#nBackList .bl{padding:3px 0;cursor:pointer;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#nBackList .bl:hover b{color:var(--nl)}#nBackList .bl small{color:var(--mu);margin-left:8px}
+#mdEd .cm-line.md-code{font:.9em/1.5 'Courier Prime','Courier New',Courier,monospace;color:var(--nc);background:var(--ncb);padding:0 1.1em!important;border:0 solid var(--ncbd);border-width:0 1px}   /* subtle outline: sides on every line, top on the opening fence, bottom on the closing one */
+#mdEd .cm-line.md-fs{border-top-width:1px}
+#mdEd .cm-line.md-fl{border-bottom-width:1px}
+#mdEd .cm-line.md-fe{line-height:1}
+#mdEd .md-fx{color:transparent!important}   /* fence text inside a rendered (read-only) copy of a block: kept so the strip has height, just not drawn */
+/* Rendered code block (block widget). The padding lives on the outer element because margins on block widgets aren't counted when the editor measures lines. */
+#mdEd .cbw{padding:.25em 0;cursor:text}
+#mdEd .cb{position:relative;border-radius:8px;border:1px solid var(--ncbd);background:var(--ncb);overflow:hidden}
+#mdEd .cb .cm-editor{position:relative!important;inset:auto;height:auto!important;background:transparent}
+#mdEd .cb .cm-scroller{overflow:visible!important;height:auto}
+#mdEd .cb .cm-content{max-width:none;margin:0!important;padding:0!important}
+#mdEd .cb .cm-line.md-code{background:transparent;border:0;border-radius:0}
+#mdEd .cb>.md-fw{top:.6em;right:.6em;transform:none}
+#mdEd .cb .cm-line.md-fs .md-fw{display:none}
+#mdEd .cm-line.md-emp{min-height:1.5em}   /* a block with no lines inside: keep the closing strip clickable too */
+#mdEd .cm-line.md-fs{min-height:1.8em}   /* the hidden opening ``` keeps a modest strip so it can be clicked to edit; the closing one stays thin so it doesn't crowd the code between them */
+#mdEd .cm-line.md-code.md-bl{min-height:1.5em}   /* blank lines inside a block (e.g. a fresh, empty one) stay an easy click target */
+/* Code blocks: one rounded box (opening fence = top corners, closing fence = bottom corners), every line including blanks shares the same background */
+#mdEd .cm-line.md-fs{border-radius:8px 8px 0 0}
+#mdEd .cm-line.md-fl{border-radius:0 0 8px 8px}
+#mdEd .cm-line.md-fs.md-fl{border-radius:8px}
+/* Language callout in the top-right corner of a rendered block. The fence line is otherwise a thin strip, so it gets a little height to hold the tag. */
+#mdEd .cm-line.md-lang{position:relative}   /* same 1.8em height as .md-fs, so the block doesn't shift when its fences appear or hide */
+/* Tag + expand button in the top-right corner of rendered code blocks and diagrams (real elements, so the button is clickable) */
+#mdEd .md-fw{position:absolute;right:.6em;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:.4em;line-height:1;pointer-events:none}
+#mdEd .mm>.md-fw{top:.6em;transform:none}
+#mdEd .md-ftag{font:10px/1 'IBM Plex Mono','Courier New',monospace;letter-spacing:.04em;text-transform:lowercase;color:var(--mu);background:color-mix(in srgb,var(--tx) 8%,transparent);border:1px solid var(--bd);border-radius:4px;padding:3px 6px;user-select:none}
+#mdEd button.md-xb{display:inline-flex;align-items:center;justify-content:center;width:22px;height:18px;padding:0;margin:0;letter-spacing:0;text-transform:none;color:var(--mu);background:color-mix(in srgb,var(--tx) 8%,transparent);border:1px solid var(--bd);border-radius:4px;cursor:pointer;pointer-events:auto}
+#mdEd button.md-xb:hover{color:var(--ac);border-color:var(--ac)}
+#mdEd button.md-xb svg{width:11px;height:11px;display:block}
+/* Expanded view: the same rounded block as in the rendered note, filling the notes editor area */
+#mdFull{position:absolute;inset:0;z-index:6;background:var(--bg);padding:.6rem}
+#mdFull .fz-box{position:relative;height:100%;border-radius:8px;border:1px solid var(--ncbd);background:var(--ncb);overflow:hidden}
+#mdFull .fz-body{position:absolute;inset:0;overflow:auto}
+#mdFull .md-fw{top:.6em;right:1.4em;transform:none}
+#mdEd #mdFull .cm-content{max-width:none;margin:0!important;padding:0 0 1.5rem!important}
+#mdEd #mdFull .cm-line.md-code{background:transparent;border:0}
+#mdFull .cm-line.md-fs .md-fw{display:none}
+#mdFull .fz-svg{display:flex;align-items:center;justify-content:center;box-sizing:border-box;padding:2.4rem 1rem 1rem;color:var(--tx)}
+#mdFull .fz-svg svg{width:100%;height:100%;max-width:none!important}
+/* Mermaid diagrams (rendered view): same rounded box as code blocks; before permission is given they show an ask box with a button */
+#mdEd .mm{position:relative;margin:.5em 0;border-radius:8px;border:1px solid var(--ncbd);background:var(--ncb);padding:1em 1.1em;overflow:auto;text-align:center;cursor:pointer;color:var(--tx)}
+#mdEd .mm svg{max-width:100%;height:auto}
+#mdEd .mm-ask{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.7em;min-height:9em;border:1px dashed color-mix(in srgb,var(--tx) 22%,var(--bd))}
+#mdEd .mm-msg{font-weight:600}
+#mdEd .mm-sub{color:var(--mu);font-size:.8em;line-height:1.4;max-width:32em}
+#mdEd .mm-ask button{cursor:pointer;color:var(--ac);border-color:var(--ac)}   /* only the Allow button; the corner expand button stays subtle */
+#mdEd .mm-load{color:var(--mu);font-size:.85em;padding:2em 1em}
+#mdEd .mm-err{color:var(--tr);text-align:left;white-space:pre-wrap;font-size:.8em;line-height:1.4}
+/* Fountain code blocks: the screenplay's colours and indents, scaled to the notes column. Indents add to the block's own 1.1em inset, and the
+   selectors are deliberately as specific as .md-code's padding (!important) so the screenplay padding wins */
+#mdEd .cm-line.md-code.md-ft.ft-scene{font-weight:700;text-transform:uppercase;color:var(--ac)}
+#mdEd .cm-line.md-code.md-ft.ft-character{text-transform:uppercase;padding-left:calc(1.1em + 26%)!important;color:var(--ch)}
+#mdEd .cm-line.md-code.md-ft.ft-dialogue{padding-left:calc(1.1em + 10%)!important;padding-right:calc(1.1em + 12%)!important}
+#mdEd .cm-line.md-code.md-ft.ft-parenthetical{padding-left:calc(1.1em + 18%)!important;padding-right:calc(1.1em + 16%)!important;font-style:italic;color:var(--mu)}
+#mdEd .cm-line.md-code.md-ft.ft-transition{text-align:right;text-transform:uppercase;font-weight:700;color:var(--tr)}
+#mdEd .cm-line.md-code.md-ft.ft-centered{text-align:center}
+#mdEd .cm-line.md-code.md-ft.ft-lyric{font-style:italic;padding-left:calc(1.1em + 6%)!important;color:var(--ly)}
+#mdEd .cm-line.md-code.md-ft.ft-pagebreak{color:var(--mu)}
+#mdEd .cm-line.md-code.md-ft.ft-title{color:var(--mu)}
+#mdEd .ft-b{font-weight:700}#mdEd .ft-i{font-style:italic}#mdEd .ft-u{text-decoration:underline}
+#mdEd .ft-num{color:var(--ly)}
+#mdEd .md-ft .bone{opacity:.45;font-style:italic}
 #mdEd .cm-line.md-q{border-left:2px solid var(--nq);padding-left:1em!important;color:var(--tx)}
 #mdEd .cm-line.md-hr{line-height:.6;border-bottom:2px solid color-mix(in srgb,var(--tx) 16%,transparent)}
 #mdEd .cm-line.md-fm{font:.85em/1.5 'Courier Prime','Courier New',Courier,monospace;color:var(--mu)}
@@ -196,10 +270,11 @@ button:hover{color:var(--tx)}button.on{background:var(--ac);border-color:var(--a
 #mdEd.src .mkr{opacity:1}
 #mdEd.src .md-h{font-size:inherit;font-weight:400;line-height:inherit;border:0;padding-top:0!important}
 #mdEd.src .md-b,#mdEd.src .md-bi{font-weight:400}#mdEd.src .md-i,#mdEd.src .md-bi{font-style:normal}
-#mdEd.src .md-s{text-decoration:none}#mdEd.src .md-a{text-decoration:none}#mdEd.src .md-img{font-style:normal}
+#mdEd.src .md-s{text-decoration:none}#mdEd.src .md-a{text-decoration:none}#mdEd.src .md-wl{text-decoration:none}#mdEd.src .md-img{font-style:normal}
 #mdEd.src .md-c{font:inherit;background:none;border:0;padding:0}#mdEd.src .md-hl{background:none;padding:0}
-#mdEd.src .cm-line.md-code{background:none;font:inherit;padding:0!important}
+#mdEd.src .cm-line.md-code{background:none;font:inherit;padding:0!important;border:0;border-radius:0}   /* source mode: code blocks are not rendered, just the text */
 #mdEd.src .cm-line.md-fe,#mdEd.src .cm-line.md-hr{line-height:inherit}
+#mdEd.src .cm-line.md-fs,#mdEd.src .cm-line.md-bl,#mdEd.src .cm-line.md-emp{min-height:0}
 #mdEd.src .cm-line.md-hr{border:0;color:var(--mu)}
 #mdEd.src .cm-line.md-q{border:0;padding-left:0!important;color:inherit}
 #mdEd.src .cm-line.md-fm,#mdEd.src .cm-line.md-tbl{font:inherit}
@@ -225,12 +300,12 @@ button:hover{color:var(--tx)}button.on{background:var(--ac);border-color:var(--a
 <div id="dsm"><div id="dsc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Discover Scripts</b><span class="sp"></span><button id="dsx">×</button></div><div id="dsl"></div></div></div>
 <div id="stm"><div id="stc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Bamboo Fountain</b><span class="sp"></span><button id="stx" title="Close (Esc)">×</button></div><div class="stp">Live Fountain screenplay editor. What would you like to do?</div><div id="stl"></div></div></div>
 <div id="lm"><div id="lc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Licenses</b><span class="sp"></span><button id="lx">×</button></div><pre id="lt"></pre></div></div>
-  <div id="main"><div id="side"><div id="sideSplit" title="Drag to resize (double-click to reset)"></div><div id="sideHead"><span>Outline</span><button id="sideToggle" title="Collapse outline">‹</button></div><div id="sideList"></div><div id="fileSec" class="empty"><div id="fileHead"><span id="projName">Files</span><span><button id="fNew" title="New note in folder root" hidden>+</button><button id="fRef" title="Refresh" hidden>↻</button><button id="fX" title="Close folder" hidden>×</button><button id="fOpenBtn" title="Open a project folder">Folder…</button></span></div><div id="fileTree"></div></div></div><div id="ed"></div><div id="notes" hidden><div id="nSplit"></div><div id="nCard"><div id="nHead"><span id="nName"></span><button id="nMd" title="Show all markdown (Ctrl/⌘+/)">Markdown</button><button id="nSave">Save</button><button id="nX" title="Close">×</button></div><div id="nBody"><div id="mdEd"></div></div></div></div></div>
+  <div id="main"><div id="side"><div id="sideSplit" title="Drag to resize (double-click to reset)"></div><div id="sideHead"><span>Outline</span><button id="sideToggle" title="Collapse outline">‹</button></div><div id="sideList"></div><div id="fileSec" class="empty"><div id="fileHead"><span id="projName">Files</span><span><button id="fNew" title="New note in folder root" hidden>+</button><button id="fRef" title="Refresh" hidden>↻</button><button id="fX" title="Close folder" hidden>×</button><button id="fOpenBtn" title="Open a project folder">Folder…</button></span></div><div id="fileTree"></div></div></div><div id="ed"></div><div id="notes" hidden><div id="nSplit"></div><div id="nCard"><div id="nHead"><span class="nl"><button id="nMd" title="Show all markdown (Ctrl/⌘+/)">Markdown</button><button id="nBk" title="Back to the previous note (Alt+←)" disabled>‹</button></span><span id="nName"></span><span class="nr"><button id="nImg" title="Import an image (you can also paste or drop one into the note)">Import image</button><input type="file" id="nImgIn" accept="image/*" multiple hidden><button id="nSave">Save</button><button id="nPdf" title="Export this note as a PDF (opens the print dialog: choose Save as PDF)">PDF</button><button id="nX" title="Close">×</button></span></div><div id="nBody"><div id="mdEd"></div></div><div id="nBack" hidden><div id="nBackHead"></div><div id="nBackList"></div></div></div></div></div>
  <div class="bar bot" id="fmt"></div>
  <div class="bar bot" id="stat" style="font-size:9px;color:var(--mu)"><span id="st1"></span><span class="sp"></span><span id="st2"><span id="sFile"></span><span id="sLoc"></span><span id="sBak"></span><span id="sSpell" title="Turn spell check on or off"></span><span id="sLic" title="Open-source licenses">Licenses</span></span></div>
 </div>
 <script type="module">
-import {EditorState,EditorSelection,RangeSetBuilder,Annotation} from "@codemirror/state";
+import {EditorState,EditorSelection,RangeSetBuilder,Annotation,StateField} from "@codemirror/state";
 import {EditorView,ViewPlugin,Decoration,WidgetType,keymap,drawSelection,lineNumbers,highlightActiveLineGutter} from "@codemirror/view";
 import {history,historyKeymap,defaultKeymap,insertNewline} from "@codemirror/commands";
 
@@ -442,9 +517,28 @@ const MD_SKIP_RES=[
   /\]\([^)\n]*\)/g,                                                   // link and image targets: [text](target)
   /<[^>\n]+>/g,                                                       // HTML tags and <autolinks>
   /^[ \t]*\[[^\]\n]+\]:[^\n]*$/gm,                                    // reference link definitions
-  /(^|\s)#[\p{L}\p{N}_\/-]+/gu                                        // #tags
+  /(^|\s)#[\p{L}\p{N}_\/-]+/gu,                                        // #tags
+  /\[\[[^\[\]|\n]*[|\]]/g,                                       // [[note links]]: the target part (alias text is still checked)
 ];
-function mdSkipRanges(text){const out=[];for(const re of MD_SKIP_RES)for(const m of text.matchAll(re))out.push([m.index,m.index+m[0].length]);return out}
+function mdSkipRanges(text){
+  const out=[];
+  for(const [ri,re] of MD_SKIP_RES.entries())for(const m of text.matchAll(re)){
+    if(ri===1){   // fenced block: a Fountain one is prose, so skip only its fence lines and boneyard, not the whole block
+      const nl=m[0].indexOf("\n"),head=nl<0?m[0]:m[0].slice(0,nl);
+      if(isFtLang(head.replace(/^[ \t]*(`{3,}|~{3,})/,""))){
+        out.push([m.index,m.index+head.length]);
+        if(nl>=0){
+          const body=m[0].slice(nl+1),close=/\n[ \t]*(`{3,}|~{3,})[^\n]*$/.exec(m[0]);
+          if(close)out.push([m.index+close.index,m.index+m[0].length]);
+          const b0=m.index+nl+1;for(const b of body.matchAll(BONE))out.push([b0+b.index,b0+b.index+b[0].length]);
+        }
+        continue;
+      }
+    }
+    out.push([m.index,m.index+m[0].length]);
+  }
+  return out;
+}
 let mdSkip=[];
 const inMdSkip=p=>mdSkip.some(([a,b])=>p>=a&&p<b);
 function mdSpellDeco(view,state){
@@ -628,8 +722,51 @@ const toggleMark=kind=>v=>{
   v.dispatch({changes,selection:EditorSelection.create(ranges),userEvent:"input.format",scrollIntoView:true});
   return true;
 };
-const makeState=doc=>EditorState.create({doc,extensions:[history(),drawSelection(),lineNumbers(),highlightActiveLineGutter(),EditorView.lineWrapping,live,spellPlugin,spellMenu,EditorView.contentAttributes.of({spellcheck:"false"}),
-    keymap.of([{key:"Mod-b",run:toggleMark("b"),preventDefault:true},{key:"Mod-i",run:toggleMark("i"),preventDefault:true},{key:"Mod-u",run:toggleMark("u"),preventDefault:true},{key:"Enter",run:insertNewline},{key:"Tab",run:cycle(1),shift:cycle(-1)},{key:"Mod-/",run:()=>{toggleRaw();return true},preventDefault:true},{key:"Mod-\\",run:()=>{setSide(!$("side").classList.contains("c"));return true},preventDefault:true},...historyKeymap,...defaultKeymap]),
+// ----- Auto-closing pairs (both editors) -----
+// Typing an opener inserts its closer and leaves the cursor between them; typing the closer steps over it; Backspace between an empty pair removes both;
+// typing an opener with text selected wraps the selection. Quotes only pair when they don't follow a word character (so apostrophes stay put).
+// In Markdown, typing a third backtick at the start of a line opens a fenced block (opening and closing ```), with the cursor left after the opening fence to type the language.
+const FT_PAIRS={"(":")","[":"]","{":"}",'"':'"'};
+const MD_PAIRS={"(":")","[":"]","{":"}",'"':'"',"`":"`"};
+function autoPair(pairs,fence){
+  const closers=Object.values(pairs);
+  return EditorView.inputHandler.of((view,from,to,text)=>{
+    if(view.composing||text.length!==1||!(text in pairs||closers.includes(text)))return false;
+    const st=view.state;
+    if(fence&&text==="`"&&st.selection.ranges.length===1&&st.selection.main.empty){
+      const h=st.selection.main.head,ln=st.doc.lineAt(h);
+      if(/^\s*``$/.test(ln.text.slice(0,h-ln.from))&&!ln.text.slice(h-ln.from).trim()){
+        const ind=/^\s*/.exec(ln.text)[0];
+        view.dispatch({changes:{from:h,to:ln.to,insert:"`\n"+ind+"```"},selection:{anchor:h+1},scrollIntoView:true,userEvent:"input.type"});   // cursor stays after the opening ``` so the language can be typed, then Enter opens the lines inside
+        return true;
+      }
+    }
+    let any=false;
+    const tr=st.changeByRange(r=>{
+      const close=pairs[text],next=st.sliceDoc(r.to,r.to+1),prev=st.sliceDoc(Math.max(0,r.from-1),r.from);
+      if(r.empty&&closers.includes(text)&&next===text){any=true;return {range:EditorSelection.cursor(r.to+1)}}   // step over an existing closer
+      if(close!==undefined){
+        if(!r.empty){any=true;return {changes:[{from:r.from,insert:text},{from:r.to,insert:close}],range:EditorSelection.range(r.anchor+1,r.head+1)}}   // wrap selection
+        const symmetric=close===text;
+        if((next===""||/[\s)\]}>:;,.!?"]/.test(next))&&(!symmetric||(!/\w/.test(prev)&&prev!==text))){
+          any=true;return {changes:{from:r.from,insert:text+close},range:EditorSelection.cursor(r.from+1)};
+        }
+      }
+      return {changes:{from:r.from,to:r.to,insert:text},range:EditorSelection.cursor(r.from+text.length)};   // not handled: type it normally
+    });
+    if(!any)return false;
+    view.dispatch(st.update(tr,{scrollIntoView:true,userEvent:"input.type"}));
+    return true;
+  });
+}
+const pairBackspace=pairs=>v=>{
+  const st=v.state;
+  if(!st.selection.ranges.every(r=>r.empty&&r.head>0&&st.sliceDoc(r.head,r.head+1)!==""&&pairs[st.sliceDoc(r.head-1,r.head)]===st.sliceDoc(r.head,r.head+1)))return false;
+  v.dispatch(st.update(st.changeByRange(r=>({changes:{from:r.head-1,to:r.head+1},range:EditorSelection.cursor(r.head-1)})),{userEvent:"delete.backward",scrollIntoView:true}));
+  return true;
+};
+const makeState=doc=>EditorState.create({doc,extensions:[history(),drawSelection(),lineNumbers(),highlightActiveLineGutter(),EditorView.lineWrapping,live,spellPlugin,spellMenu,autoPair(FT_PAIRS,false),EditorView.contentAttributes.of({spellcheck:"false"}),
+    keymap.of([{key:"Mod-b",run:toggleMark("b"),preventDefault:true},{key:"Mod-i",run:toggleMark("i"),preventDefault:true},{key:"Mod-u",run:toggleMark("u"),preventDefault:true},{key:"Backspace",run:pairBackspace(FT_PAIRS)},{key:"Enter",run:insertNewline},{key:"Tab",run:cycle(1),shift:cycle(-1)},{key:"Mod-/",run:()=>{toggleRaw();return true},preventDefault:true},{key:"Mod-\\",run:()=>{setSide(!$("side").classList.contains("c"));return true},preventDefault:true},...historyKeymap,...defaultKeymap]),
     EditorView.updateListener.of(u=>{
       if(pending&&(u.docChanged||u.selectionSet)){
         const ln=u.state.doc.lineAt(u.state.selection.main.head);
@@ -755,6 +892,7 @@ function applyTheme(){
   localStorage.setItem("bf_theme",themeKey);localStorage.setItem("bf_accent",accentIdx);
   $("tp").innerHTML=`<div class="r"><button data-k="auto" class="${themeKey==="auto"?"on":""}" title="Follow system light / dark">Auto</button>${Object.entries(TH).map(([k,t])=>`<button data-k="${k}" class="${k===themeKey?"on":""}">${t[0]}</button>`).join("")}</div>
    <div class="r">${acc.map((x,i)=>`<button class="sw ${i===accentIdx?"on":""}" data-a="${i}" title="${x[0]}" style="background:${x[1]}"></button>`).join("")}</div>`;
+  try{mdView.dispatch({annotations:MdRef.of(1)})}catch(e){}   // diagrams follow the theme (not defined yet during startup, hence the try)
 }
 $("theme").onclick=e=>{e.stopPropagation();$("tp").classList.toggle("show")};
 $("tp").onclick=e=>{e.stopPropagation();const d=e.target.dataset;
@@ -1252,6 +1390,7 @@ async function renderTree(){
 }
 async function setRoot(d){
   root=d;savedRoot=null;openDirs=new Set();$("projName").textContent=d?d.name:"Files";
+  vault.p=null;vault.t=0;vault.all=[];vault.keys=new Map();navBack.length=0;navBtn();refreshVault();
   idbOp("readwrite",st=>d?st.put(d,"proj"):st.delete("proj"));
   await renderTree();
 }
@@ -1259,7 +1398,7 @@ async function pickFolder(){
   try{await setRoot(await showDirectoryPicker({id:"bf-project",mode:"readwrite"}))}
   catch(e){if(e.name!=="AbortError")failed("open the folder",e)}
 }
-$("fOpenBtn").onclick=pickFolder;$("fRef").onclick=renderTree;$("fX").onclick=()=>setRoot(null);
+$("fOpenBtn").onclick=pickFolder;$("fRef").onclick=()=>{refreshVault();renderTree()};$("fX").onclick=()=>setRoot(null);
 $("fNew").onclick=async()=>{
   const kind=await askNewKind();if(!kind)return;
   const ft=kind==="fountain";
@@ -1270,9 +1409,9 @@ $("fNew").onclick=async()=>{
   try{
     try{await root.getFileHandle(n);return alert(n+" already exists.")}catch(e){if(e.name!=="NotFoundError")throw e}
     if(ft?!await guard("opening "+n):nh&&!await guardNote("opening "+n))return;   // the open editor is about to be replaced, so ask before creating anything
-    const h=await root.getFileHandle(n,{create:true});
+    const h=await root.getFileHandle(n,{create:true});refreshVault();
     if(ft){const txt=defaultDoc();await writeTo(h,txt);loadDoc(txt);setHandle(h);setName(n);shownFt="/"+n;await renderTree()}
-    else{await writeTo(h,"# "+n.replace(/\.\w+$/,"")+"\n\n");await openNote(h,"/"+n,true)}
+    else{await writeTo(h,"# "+n.replace(/\.\w+$/,"")+"\n\n");refreshVault();await openNote(h,"/"+n,true)}
   }catch(e){failed("create the "+(ft?"screenplay":"note"),e)}
 };
 $("fileTree").onclick=async e=>{
@@ -1298,6 +1437,104 @@ if(DIRP)idbOp("readonly",st=>st.get("proj")).then(async d=>{
 // ----- notes pane: one CodeMirror editor, Live (markers hidden off the active line) or Source (all markers shown) -----
 let mdSrc=localStorage.getItem("bf_nmode")==="src";
 const MdRef=Annotation.define();
+// ----- images in notes -----
+// ![alt](images/pic.png) renders as the picture (when the line isn't being edited and Markdown view is off). Images that are pasted, dropped or chosen with the
+// Image button are saved into an "images" folder in the same directory as the note (created if missing), and a relative link is inserted. Only relative links
+// to files are shown: web images are not fetched, so opening a note never makes a network request.
+const IMG_MIME={"image/png":"png","image/jpeg":"jpg","image/gif":"gif","image/webp":"webp","image/avif":"avif","image/bmp":"bmp","image/svg+xml":"svg"};
+const IMG_EXT=/\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i,isImg=f=>f.type.startsWith("image/")||IMG_EXT.test(f.name);
+let nDir=null,imgGen=0;const imgUrls=new Map();   // nDir: the note's folder when it isn't inside the project folder (picked once); imgUrls: object URLs for this note's pictures
+function imgReset(){imgGen++;for(const u of imgUrls.values())URL.revokeObjectURL(u);imgUrls.clear();nDir=null}
+// Where this note's relative links start: {dir, segs} = a folder handle plus the folder names below it that lead to the note's own folder. null if unknown.
+async function noteBase(){
+  if(!nh)return null;
+  if(!nPath&&root){try{const parts=await root.resolve(nh);if(parts)nPath="/"+parts.join("/")}catch(e){}}   // a note opened with the file picker may still live inside the project folder
+  if(root&&nPath){const segs=nPath.split("/").filter(Boolean);segs.pop();return{dir:root,segs}}
+  if(nDir)return{dir:nDir,segs:[]};
+  return null;
+}
+async function pickNoteDir(){   // a file handle can't reveal its folder, so the person picks it once (same approach as the backup folder)
+  if(!window.showDirectoryPicker)return null;
+  const d=await showDirectoryPicker({id:"bf-note-dir",mode:"readwrite",startIn:nh}),parts=await d.resolve(nh);
+  if(!parts){if(!confirm("That folder doesn't contain "+nh.name+". Save the note's images there anyway?"))return null;nDir=d;return d}
+  let x=d;for(const q of parts.slice(0,-1))x=await x.getDirectoryHandle(q);nDir=x;return x;
+}
+async function noteDir(){   // the note's own folder as a handle, asking for it if needed
+  const b=await noteBase();
+  if(b){let d=b.dir;for(const q of b.segs)d=await d.getDirectoryHandle(q);return d}
+  return await pickNoteDir();
+}
+const ensureRW=async h=>await h.queryPermission({mode:"readwrite"})==="granted"||await h.requestPermission({mode:"readwrite"})==="granted";
+function imgParts(b,src){   // folder names + file name that a relative link points at, or null if it leaves the known folder
+  let st=[...b.segs];
+  try{for(const q of decodeURI(src.split(/[?#]/)[0]).split("/")){if(q===".."){if(!st.length)return null;st.pop()}else if(q&&q!==".")st.push(q)}}catch(e){return null}
+  return st.length?st:null;
+}
+async function imgUrl(src){
+  const gen=imgGen,b=await noteBase();if(!b)throw new Error("no folder");
+  const parts=imgParts(b,src);if(!parts)throw new Error("outside");
+  const key=parts.join("/");if(imgUrls.has(key))return imgUrls.get(key);
+  let d=b.dir;for(const q of parts.slice(0,-1))d=await d.getDirectoryHandle(q);
+  const f=await(await d.getFileHandle(parts[parts.length-1])).getFile(),u=URL.createObjectURL(f);
+  if(gen!==imgGen){URL.revokeObjectURL(u);throw new Error("stale")}   // another note was opened while this loaded
+  imgUrls.set(key,u);return u;
+}
+class ImgW extends WidgetType{
+  constructor(alt,src){super();this.alt=alt;this.src=src}
+  eq(o){return o.alt===this.alt&&o.src===this.src}
+  toDOM(v){
+    const w=document.createElement("span");w.className="md-imgw md-imgx";w.textContent="Loading image…";
+    w.onmousedown=e=>{e.preventDefault();v.dispatch({selection:{anchor:v.posAtDOM(w)}});v.focus()};   // click: back to the raw markdown for editing
+    const miss=m=>{w.className="md-imgw md-imgx";w.textContent=(this.alt||this.src)+" ("+m+")";v.requestMeasure()};
+    imgUrl(this.src).then(u=>{
+      const im=new Image();im.alt=this.alt;im.title=this.alt;im.draggable=false;
+      im.onload=()=>{w.className="md-imgw";w.textContent="";w.appendChild(im);v.requestMeasure()};
+      im.onerror=()=>miss("can't display this image");im.src=u;
+    },e=>miss(e&&e.name==="NotFoundError"?"image not found":e&&e.message==="no folder"?"open the note from a folder to show its images":"can't load this image"));
+    return w;
+  }
+}
+function imgName(f){
+  const ext=(IMG_MIME[f.type]||(/\.(\w+)$/.exec(f.name)||[])[1]||"png").toLowerCase();
+  let b=f.name.replace(/\.[^.]*$/,"").replace(/[^\p{L}\p{N}_.-]+/gu,"-").replace(/^[-.]+|[-.]+$/g,"");
+  if(!b||/^image\d*$/i.test(b)){const d=new Date(),z=n=>String(n).padStart(2,"0");b="image-"+d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+"-"+z(d.getHours())+z(d.getMinutes())+z(d.getSeconds())}   // clipboard images are all called "image.png"
+  return b+"."+ext;
+}
+async function freeName(dir,name){   // never overwrite an existing picture: pic.png -> pic-1.png
+  const m=/^(.*?)(\.[^.]*)$/.exec(name);
+  for(let k=0;;k++){const n=k?m[1]+"-"+k+m[2]:name;try{await dir.getFileHandle(n)}catch(e){if(e.name==="NotFoundError")return n;throw e}}
+}
+async function addImages(v,files,pos){
+  files=files.filter(isImg);if(!files.length||!nh)return;
+  const start=nh;
+  try{
+    const dir=await noteDir();if(!dir)return;
+    if(!await ensureRW(dir)){alert("Bamboo Fountain needs permission to write to this folder to save images.");return}
+    const imgs=await dir.getDirectoryHandle("images",{create:true}),b=await noteBase(),links=[];   // makes the folder if it doesn't exist
+    for(const f of files){
+      const name=await freeName(imgs,imgName(f)),w=await(await imgs.getFileHandle(name,{create:true})).createWritable();
+      await w.write(f);await w.close();
+      imgUrls.set([...b.segs,"images",name].join("/"),URL.createObjectURL(f));   // show it straight away without re-reading the file
+      links.push("!["+name.replace(/\.[^.]*$/,"")+"](images/"+name+")");
+    }
+    if(nh!==start)return;   // the note was switched while saving; the pictures are saved, there is just nowhere to put the links
+    pos=Math.min(pos,v.state.doc.length);const ln=v.state.doc.lineAt(pos);
+    const text=(ln.text.slice(0,pos-ln.from).trim()?"\n":"")+links.join("\n")+"\n";
+    v.dispatch({changes:{from:pos,insert:text},selection:{anchor:pos+text.length},scrollIntoView:true,userEvent:"input.paste"});v.focus();
+  }catch(e){if(e.name!=="AbortError")failed("save the image",e)}
+}
+const imgEvents=EditorView.domEventHandlers({
+  paste:(e,v)=>{
+    const fs=[...(e.clipboardData&&e.clipboardData.files||[])].filter(f=>f.type.startsWith("image/"));
+    if(!fs.length||e.clipboardData.getData("text/plain"))return false;   // text pasted from Word/web pages often carries a preview image too: keep the text
+    e.preventDefault();addImages(v,fs,v.state.selection.main.head);return true;
+  },
+  dragover:e=>{if([...(e.dataTransfer&&e.dataTransfer.types||[])].includes("Files")){e.preventDefault();return true}return false},
+  drop:(e,v)=>{
+    const fs=[...(e.dataTransfer&&e.dataTransfer.files||[])].filter(isImg);if(!fs.length)return false;
+    e.preventDefault();addImages(v,fs,v.posAtCoords({x:e.clientX,y:e.clientY})??v.state.selection.main.head);return true;
+  }
+});
 class Bul extends WidgetType{eq(){return true}toDOM(){const s=document.createElement("span");s.className="md-bul";s.textContent="•";return s}}
 class Chk extends WidgetType{constructor(c){super();this.c=c}eq(o){return o.c===this.c}
   toDOM(v){const s=document.createElement("span");s.className="md-chk";s.textContent=this.c?"☑":"☐";
@@ -1310,12 +1547,24 @@ function mdInline(s,off,on,out){
   let m;
   const rc=/`([^`\n]+)`/g;
   while((m=rc.exec(s))){const a=m.index,b=a+m[0].length;take(a,b);M("md-c",a+1,b-1);H(a,a+1);H(b-1,b)}
+  const rw=/(!?)\[\[([^\[\]\n|\\]+?)(?:\\?\|([^\[\]\n]+))?\]\]/g;   // [[Note]], [[Note|alias]], [[Note#Heading]], [[#Heading]]
+  while((m=rw.exec(s))){
+    const a=m.index,b=a+m[0].length;if(m[1]||!free(a,b))continue;
+    take(a,b);
+    const tg=m[2].trim(),ok=!tg.split("#")[0].trim()||wlFind(tg,nPath),t0=m[3]!=null?a+m[0].indexOf("|")+1:a+2;
+    H(a,t0);H(b-2,b);
+    M("md-wl"+(ok?"":" md-wl-x"),t0,b-2,{"data-wl":tg,title:!ok&&!root?"Open a project folder to link notes":(on?"Ctrl/⌘+click":"Click")+(ok?" to open":": note not found, click to create it")});
+  }
   const rl=/(!?)\[([^\]\n]*)\]\(([^)\s]*)(?:\s+"[^"]*")?\)/g;
   while((m=rl.exec(s))){
     const a=m.index,b=a+m[0].length,t0=a+m[1].length+1,t1=t0+m[2].length;
+    if(m[1]&&m[3]&&!on&&!mdSrc&&!/^([a-z][a-z0-9+.-]*:|\/\/)/i.test(m[3])){   // a relative image link on a line that isn't being edited: show the picture
+      if(free(a,b)){take(a,b);out.push(Decoration.replace({widget:new ImgW(m[2],m[3])}).range(off+a,off+b))}
+      continue;
+    }
     if(!free(a,t0)||!free(t1,b))continue;
     take(a,t0);take(t1,b);H(a,t0);H(t1,b);
-    M(m[1]?"md-img":"md-a",t0,t1,m[1]?null:{"data-href":m[3],title:"Ctrl/⌘+click to open"});
+    M(m[1]?"md-img":"md-a",t0,t1,m[1]?null:{"data-href":m[3],title:on?"Ctrl/⌘+click to open":"Click to open"});
   }
   for(const [k,c,re,us] of [[3,"md-bi",/\*\*\*(?=\S)(.+?)\*\*\*/g],[2,"md-b",/\*\*(?=\S)(.+?)\*\*/g],[2,"md-s",/~~(?=\S)(.+?)~~/g],[2,"md-hl",/==(?=\S)(.+?)==/g],
       [1,"md-i",/\*(?=[^\s*])(.+?)\*/g],[1,"md-i",/(^|\W)_(?=[^\s_])(.+?)_(?=\W|$)/g,true]]){
@@ -1326,9 +1575,46 @@ function mdInline(s,off,on,out){
     }
   }
 }
+// ----- Fountain code blocks: ```fountain (or ```screenplay) in a note renders with the screenplay's own classifier and colours -----
+const FT_LANG=/^(fountain|screenplay|screenwriting|ftn)$/i;
+const isFtLang=info=>FT_LANG.test((info||"").trim().split(/[\s{]/)[0]);
+// Classify the lines between the fences once, when the opening fence is reached. T[k] is the type of the k-th line of the block.
+function ftBlock(doc,open,fence,act){
+  const L=[];let last=doc.lines;
+  for(let n=open+1;n<=doc.lines;n++){
+    const t=doc.line(n).text.trim();
+    if(t.length>=fence.len&&t===fence.ch.repeat(t.length)){last=n-1;break}
+    L.push(doc.line(n).text);
+  }
+  const first=open+1,raw=L.join("\n"),masked=maskBone(raw).split("\n");
+  let cur=-1;for(const n of act)if(n>=first&&n<=last)cur=n-first;   // the line being typed, so a half-typed cue isn't mis-read
+  const T=L.length?classify(masked,cur):[];
+  return{first,last,L:masked,T,cur,from:L.length?doc.line(first).from:0,raw};
+}
+function ftLine(doc,n,ft,out,act,isCur){
+  const ln=doc.line(n),k=n-ft.first,t=ft.T[k],s=ft.L[k];
+  const on=mdSrc||act.has(n);
+  out.push(Decoration.line({class:"md-code md-ft ft-"+(t||"blank")}).range(ln.from));   // blank lines get the block background too, so it never has gaps
+  if(t==null||t==="blank")return;
+  if(k===0)for(const m of ft.raw.matchAll(BONE))if(m[0].length)out.push(mk("bone").range(ft.from+m.index,ft.from+m.index+m[0].length));   // boneyard marks span lines, so add them once per block
+  if(t==="pagebreak"||t==="title"){return}
+  if(t==="scene"){const m=NUM.exec(s);if(m)out.push(mk("ft-num").range(ln.from+m.index,ln.from+m.index+m[0].length))}
+  const h=(a,b)=>{if(a>=0&&b>a&&b<=s.length)out.push((on?dim:hide).range(ln.from+a,ln.from+b))};
+  if((t==="scene"&&s[0]===".")||(t==="action"&&s[0]==="!")||t==="lyric"||(t==="character"&&s[0]==="@"))h(0,1);
+  if(t==="transition"&&s[0]===">")h(0,/^>\s?/.exec(s)[0].length);
+  if(t==="centered"){h(0,1);h(s.length-1,s.length)}
+  const st=[],re=/\*\*\*|\*\*|\*|_/g,EMC={"***":"ft-b ft-i","**":"ft-b","*":"ft-i","_":"ft-u"};let m;
+  while((m=re.exec(s))){
+    const kk=m[0],a=m.index,b=a+kk.length,pw=/\w/.test(s[a-1]||" "),nw=/\w/.test(s[b]||" ");
+    const top=st.length&&st[st.length-1];
+    if(top&&top.k===kk&&!(kk==="_"&&nw)&&a>top.b){st.pop();out.push(mk(EMC[kk]).range(ln.from+top.b,ln.from+a));h(top.a,top.b);h(a,b)}
+    else if(!(kk==="_"&&pw))st.push({k:kk,a,b});
+  }
+}
 function mdBuild(state){
   const doc=state.doc,out=[],act=new Set();
   for(const r of state.selection.ranges)for(let k=doc.lineAt(r.from).number;k<=doc.lineAt(r.to).number;k++)act.add(k);
+  if(state.readOnly)act.clear();   // the expanded (read-only) view always shows the block rendered
   let fmEnd=0;if(doc.line(1).text.trim()==="---")for(let n=2;n<=doc.lines;n++){const t=doc.line(n).text.trim();if(t==="---"||t==="..."){fmEnd=n;break}}
   let fence=null;
   for(let n=1;n<=doc.lines;n++){
@@ -1340,10 +1626,19 @@ function mdBuild(state){
     if(n<=fmEnd){LD("md-fm");continue}
     if(fence){
       const t=s.trim(),close=t.length>=fence.len&&t===fence.ch.repeat(t.length);
-      LD(close?"md-code md-fe":"md-code");if(close){fence=null;if(!on)H(0,s.length)}
+      if(close){LD("md-code md-fe md-fl"+(fence.open===n-1?" md-emp":""));const fon=on||!state.readOnly;fence=null;if(!fon&&s.length)out.push(mk("md-fx").range(ln.from,ln.to));continue}
+      if(fence.ft){ftLine(doc,n,fence.ft,out,act,fence.ft.cur>=0&&n-fence.ft.first===fence.ft.cur);continue}
+      LD(s.trim()?"md-code":"md-code md-bl");
       continue;
     }
-    if((m=/^\s*(`{3,}|~{3,})/.exec(s))){fence={ch:m[1][0],len:m[1].length};LD("md-code md-fe");if(!on)H(0,s.length);continue}
+    if((m=/^\s*(`{3,}|~{3,})([^`\n]*)/.exec(s))){
+      fence={ch:m[1][0],len:m[1].length,open:n};LD("md-code md-fe md-fs");
+      const fon=on||!state.readOnly;   // while editing, the fences are ordinary visible text; a closed block that isn't being edited is drawn by CodeBlk (below) instead
+      if(!mdSrc&&isFtLang(m[2]))fence.ft=ftBlock(doc,n,fence,act);   // source mode shows every block as plain text
+      const lang=m[2].trim().split(/[\s{]/)[0];
+      if(!fon)out.push(mk("md-fx").range(ln.from,ln.to));   // inside a read-only rendered copy of a block: fence text is there but not drawn
+      continue;
+    }
     if(!s.trim())continue;
     if((m=/^(#{1,6})\s+/.exec(s))){LD("md-h md-h"+m[1].length);H(0,m[0].length);inl(m[0].length);continue}
     if(/^\s{0,3}([-*_])(\s*\1){2,}\s*$/.test(s)){LD("md-hr");if(!on)H(0,s.length);continue}
@@ -1364,13 +1659,211 @@ function mdBuild(state){
     }
     inl(0);
   }
+  if(fence)out.push(Decoration.line({class:"md-fl"}).range(doc.line(doc.lines).from));   // fence never closed: the block runs to the end of the note
   return Decoration.set(out,true);
 }
+// ----- Mermaid code blocks -----
+// ```mermaid blocks render as diagrams in the rendered view (the raw source comes back while the cursor is inside the block, and in Markdown/source mode).
+// Rendering needs the Mermaid library (a third-party script, shipped with the app in vendor/ and cached for offline use), so it is not executed until the
+// person agrees, and the answer is per note: opening a note with diagrams always asks, even if another note was already allowed. "Yes" covers every diagram
+// in that note until the page is closed or reloaded (mmGrants lives only in memory, so a new session starts with everything off and asks again).
+// Block decorations can't come from a ViewPlugin, so the diagrams live in their own StateField.
+const MM_URL="./vendor/mermaid.min.js";   // Mermaid 11.4.1 single-file build, precached by sw.js (keep the version in step with VENDOR_CACHE there)
+let mmOk=false,mmLib=null,mmId=0;const mmCache=new Map(),mmGrants=[];   // mmOk: is the open note allowed to render; mmGrants: note file handles allowed this session
+function loadMermaid(){
+  if(window.mermaid)return Promise.resolve(window.mermaid);
+  return mmLib||(mmLib=new Promise((res,rej)=>{
+    const sc=document.createElement("script");sc.src=MM_URL;
+    sc.onload=()=>window.mermaid?res(window.mermaid):(mmLib=null,rej(new Error("Mermaid loaded but did not start")));
+    sc.onerror=()=>{mmLib=null;sc.remove();rej(new Error("Couldn't load Mermaid. Make sure vendor/mermaid.min.js is next to index.html."))};
+    document.head.appendChild(sc);
+  }));
+}
+function mmTheme(){   // Mermaid's light or dark palette, chosen from the app's current background colour
+  try{
+    const el=document.createElement("i");el.style.color=getComputedStyle(document.documentElement).getPropertyValue("--bg").trim()||"#000";
+    document.body.appendChild(el);const c=getComputedStyle(el).color;el.remove();
+    const [r,g,b]=c.match(/[\d.]+/g).map(Number);
+    return (0.2126*r+0.7152*g+0.0722*b)/255>0.5?"default":"dark";
+  }catch(e){return "dark"}
+}
+async function mmRender(code,th){
+  const key=th+"\n"+code;if(mmCache.has(key))return mmCache.get(key);
+  const m=await loadMermaid(),id="mm"+(++mmId);
+  m.initialize({startOnLoad:false,securityLevel:"strict",theme:th,suppressErrorRendering:true,fontFamily:"'IBM Plex Mono','Courier New',monospace"});
+  try{
+    const {svg}=await m.render(id,code);
+    if(mmCache.size>60)mmCache.delete(mmCache.keys().next().value);
+    mmCache.set(key,svg);return svg;
+  }catch(e){document.getElementById("d"+id)?.remove();document.getElementById(id)?.remove();throw e}   // Mermaid leaves its scratch nodes behind on a syntax error
+}
+function allowMermaid(v){mmOk=true;if(nh&&!mmGrants.includes(nh))mmGrants.push(nh);v.dispatch({annotations:MdRef.of(1)})}
+const XICON='<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 1.5h3v3M4.5 10.5h-3v-3M10.5 1.5L7 5M1.5 10.5L5 7"/></svg>';
+const CICON='<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 1.5v3h3M4.5 10.5v-3h-3M7.5 4.5L11 1M4.5 7.5L1 11"/></svg>';
+function expandBtn(fn,collapse){
+  const b=document.createElement("button");b.className="md-xb";const tt=collapse?"Collapse (Esc)":"Expand to full size";b.title=tt;b.setAttribute("aria-label",tt);b.innerHTML=collapse?CICON:XICON;
+  b.onmousedown=e=>{e.preventDefault();e.stopPropagation()};b.onclick=e=>{e.preventDefault();e.stopPropagation();fn()};
+  return b;
+}
+function tagBox(lang){const w=document.createElement("span");w.className="md-fw";if(lang){const t=document.createElement("span");t.className="md-ftag";t.textContent=lang;w.appendChild(t)}return w}
+// Closed fenced blocks, found with the same fence rules as mdBuild (front matter skipped).
+function cbBlocks(doc){
+  const out=[];let n=1;
+  if(doc.line(1).text.trim()==="---")for(let k=2;k<=doc.lines;k++){const t=doc.line(k).text.trim();if(t==="---"||t==="..."){n=k+1;break}}
+  let f=null;
+  for(;n<=doc.lines;n++){
+    const s=doc.line(n).text;
+    if(f){
+      const t=s.trim();
+      if(t.length>=f.len&&t===f.ch.repeat(t.length)){out.push({open:f.open,close:n,from:doc.line(f.open).from,to:doc.line(n).to,lang:f.lang,body:f.lines.join("\n")});f=null}
+      else f.lines.push(s);
+      continue;
+    }
+    const m=/^\s*(`{3,}|~{3,})([^`\n]*)/.exec(s);
+    if(m)f={ch:m[1][0],len:m[1].length,open:n,lang:m[2].trim().split(/[\s{]/)[0],lines:[]};
+  }
+  return out;
+}
+// A read-only, fully rendered copy of a block's text (fence lines are invisible; the box around it supplies the tag and buttons)
+const roBlock=(parent,text)=>new EditorView({parent,state:EditorState.create({doc:text,extensions:[mdLive,EditorState.readOnly.of(true),EditorView.editable.of(false),EditorView.lineWrapping]})});
+// A code block that isn't being edited: one rounded box with the language tag and an expand button. Clicking it opens the source for editing with the
+// cursor on the line that was clicked (the rendered lines are read-only copies, so we work out the document position from the click).
+class CodeBlk extends WidgetType{
+  constructor(text,lang){super();this.text=text;this.lang=lang}
+  eq(o){return o.text===this.text&&o.lang===this.lang}
+  ignoreEvent(){return true}
+  get estimatedHeight(){return this.text.split("\n").length*21.6+12}
+  toDOM(v){
+    const outer=document.createElement("div");outer.className="cbw";
+    const box=document.createElement("div");box.className="cb";outer.appendChild(box);
+    const fv=roBlock(box,this.text);outer._fv=fv;
+    const tools=tagBox(this.lang);tools.appendChild(expandBtn(()=>openFull(this.lang,el=>{fullView=roBlock(el,this.text)})));box.appendChild(tools);
+    outer.onmousedown=e=>{
+      if(e.target.closest("button"))return;e.preventDefault();
+      // Pick the clicked line from the rendered lines' own rectangles (the one under the pointer, else the nearest), then the column from the pointer's x
+      // on that line's middle: this can't confuse a code line with the fence line next to it.
+      const from=v.posAtDOM(outer),doc=fv.state.doc;
+      let best=null,bd=1e9;
+      for(const el of box.querySelectorAll(".cm-line")){
+        const r=el.getBoundingClientRect(),d=e.clientY<r.top?r.top-e.clientY:e.clientY>r.bottom?e.clientY-r.bottom:0;
+        if(d<bd){bd=d;best=el;if(!d)break}
+      }
+      let p=0;
+      if(best){
+        const ln=doc.lineAt(Math.min(fv.posAtDOM(best),doc.length)),r=best.getBoundingClientRect();
+        const q=fv.posAtCoords({x:e.clientX,y:r.top+r.height/2},false);
+        p=q==null?ln.to:Math.max(ln.from,Math.min(ln.to,q));
+      }
+      v.dispatch({selection:{anchor:from+p},scrollIntoView:true});v.focus();
+    };
+    requestAnimationFrame(()=>v.requestMeasure());
+    return outer;
+  }
+  destroy(dom){if(dom._fv){dom._fv.destroy();dom._fv=null}}
+}
+// Expanded view: an overlay over the whole notes editor area (Esc or Close returns to the note)
+let fullEl=null,fullView=null,fullKey=null;
+function closeFull(refocus){
+  if(!fullEl)return;
+  if(fullView){fullView.destroy();fullView=null}
+  fullEl.remove();fullEl=null;document.removeEventListener("keydown",fullKey,true);
+  if(refocus)mdView.focus();
+}
+function openFull(lang,fill){
+  closeFull();
+  const o=document.createElement("div");o.id="mdFull";
+  const box=document.createElement("div");box.className="fz-box";
+  const b=document.createElement("div");b.className="fz-body";
+  const tools=tagBox(lang);tools.appendChild(expandBtn(()=>closeFull(true),true));
+  box.append(b,tools);o.appendChild(box);
+  document.getElementById("mdEd").appendChild(o);fullEl=o;
+  fullKey=e=>{if(e.key==="Escape"){e.preventDefault();e.stopPropagation();closeFull(true)}};
+  document.addEventListener("keydown",fullKey,true);
+  fill(b);
+}
+class Mm extends WidgetType{
+  constructor(code,ok,th){super();this.code=code;this.ok=ok;this.th=th}
+  eq(o){return o.code===this.code&&o.ok===this.ok&&o.th===this.th}
+  ignoreEvent(){return true}   // the widget handles its own clicks
+  toDOM(v){
+    const d=document.createElement("div");d.className="mm";
+    const edit=()=>{const doc=v.state.doc,ln=doc.lineAt(v.posAtDOM(d));v.dispatch({selection:{anchor:ln.to},scrollIntoView:true});v.focus()};   // cursor lands on the opening fence line, so its ```mermaid can be edited too
+    d.onmousedown=e=>{if(e.target.closest("button"))return;e.preventDefault();edit()};   // clicking a diagram opens its source for editing
+    const key=this.th+"\n"+this.code,tools=tagBox("mermaid");
+    const expand=()=>{const svg=mmCache.get(key);if(svg)openFull("mermaid",el=>{el.classList.add("fz-svg");el.innerHTML=svg})};
+    if(!this.ok){
+      d.classList.add("mm-ask");
+      d.innerHTML='<div class="mm-msg">Mermaid diagram</div><div class="mm-sub">Showing diagrams runs the Mermaid script that comes with the app. Allow it for every diagram in this note for the rest of this session?</div>';
+      const b=document.createElement("button");b.textContent="Yes, render diagrams in this note";b.onclick=()=>allowMermaid(v);d.appendChild(b);
+      const h=document.createElement("div");h.className="mm-sub";h.textContent="Click anywhere else on this box to edit the source.";d.appendChild(h);
+      d.appendChild(tools);
+      return d;
+    }
+    const body=document.createElement("div");d.append(body,tools);
+    const hit=mmCache.get(key);
+    if(hit){body.innerHTML=hit;tools.appendChild(expandBtn(expand));return d}
+    d.classList.add("mm-load");body.textContent="Rendering diagram…";
+    mmRender(this.code,this.th).then(svg=>{d.classList.remove("mm-load");body.innerHTML=svg;tools.appendChild(expandBtn(expand));v.requestMeasure()},
+      e=>{d.classList.remove("mm-load");d.classList.add("mm-err");body.textContent=String((e&&e.message)||e).split("\n").slice(0,6).join("\n")+"\n\n(click to edit the source)";v.requestMeasure()});
+    return d;
+  }
+}
+// Fenced blocks of one language, found with the same fence rules as mdBuild (front matter skipped; only closed blocks count).
+function mdBlocks(doc,lang){
+  const out=[];let n=1;
+  if(doc.line(1).text.trim()==="---")for(let k=2;k<=doc.lines;k++){const t=doc.line(k).text.trim();if(t==="---"||t==="..."){n=k+1;break}}
+  let f=null;
+  for(;n<=doc.lines;n++){
+    const s=doc.line(n).text;
+    if(f){
+      const t=s.trim();
+      if(t.length>=f.len&&t===f.ch.repeat(t.length)){
+        if(f.lang===lang)out.push({open:f.open,close:n,from:doc.line(f.open).from,to:doc.line(n).to,code:f.lines.join("\n")});
+        f=null;
+      }else if(f.lang===lang)f.lines.push(s);
+      continue;
+    }
+    const m=/^\s*(`{3,}|~{3,})([^`\n]*)/.exec(s);
+    if(m)f={ch:m[1][0],len:m[1].length,open:n,lang:m[2].trim().split(/[\s{]/)[0].toLowerCase(),lines:[]};
+  }
+  return out;
+}
+function mmBuild(state){
+  if(mdSrc)return Decoration.none;   // Markdown (source) view never renders anything
+  const doc=state.doc,bl=mdBlocks(doc,"mermaid").filter(b=>b.code.trim());if(!bl.length)return Decoration.none;
+  const th=mmOk?mmTheme():"",out=[];
+  for(const b of bl){
+    const o=b.open,c=b.close;   // the cursor or selection touching the block shows its source instead of the diagram
+    if(state.selection.ranges.some(r=>doc.lineAt(r.from).number<=c&&doc.lineAt(r.to).number>=o))continue;
+    out.push(Decoration.replace({widget:new Mm(b.code,mmOk,th),block:true}).range(b.from,b.to));
+  }
+  return Decoration.set(out,true);
+}
+const mmField=StateField.define({
+  create:mmBuild,
+  update(v,tr){return tr.docChanged||tr.selection||tr.annotation(MdRef)?mmBuild(tr.state):v},
+  provide:f=>EditorView.decorations.from(f)
+});
 const mdLive=ViewPlugin.fromClass(class{
   constructor(v){this.decorations=mdBuild(v.state)}
   update(u){if(u.docChanged||u.selectionSet||u.transactions.some(t=>t.annotation(MdRef)))this.decorations=mdBuild(u.state)}
 },{decorations:p=>p.decorations});
 
+function cbBuild(state){
+  if(mdSrc)return Decoration.none;   // Markdown (source) view never renders anything
+  const doc=state.doc,out=[];
+  for(const b of cbBlocks(doc)){
+    if(b.lang.toLowerCase()==="mermaid"&&b.body.trim())continue;   // diagrams have their own widget
+    if(state.selection.ranges.some(r=>doc.lineAt(r.from).number<=b.close&&doc.lineAt(r.to).number>=b.open))continue;   // the cursor in the block shows its source
+    out.push(Decoration.replace({widget:new CodeBlk(doc.sliceString(b.from,b.to),b.lang),block:true}).range(b.from,b.to));
+  }
+  return Decoration.set(out,true);
+}
+const cbField=StateField.define({
+  create:cbBuild,
+  update(v,tr){return tr.docChanged||tr.selection||tr.annotation(MdRef)?cbBuild(tr.state):v},
+  provide:f=>EditorView.decorations.from(f)
+});
 const mdWrap=m=>v=>{
   const r=v.state.selection.main,b=v.state.sliceDoc(r.from-m.length,r.from),a=v.state.sliceDoc(r.to,r.to+m.length);
   if(b===m&&a===m)v.dispatch({changes:[{from:r.from-m.length,to:r.from},{from:r.to,to:r.to+m.length}],selection:{anchor:r.from-m.length,head:r.to-m.length}});
@@ -1416,23 +1909,214 @@ async function openLink(h){
     if(!h||h[0]==="#"||!root||!nPath)return;
     const segs=nPath.split("/").filter(Boolean);segs.pop();
     for(const p of decodeURI(h.split("#")[0]).split("/")){if(p==="..")segs.pop();else if(p&&p!==".")segs.push(p)}
-    const f=segs[segs.length-1];if(!f||!isMd(f))return;
+    const f=segs[segs.length-1];if(!f||!(isMd(f)||isFt(f)))return;
     let d=root;for(const s of segs.slice(0,-1))d=await d.getDirectoryHandle(s);
-    await openNote(await d.getFileHandle(f),"/"+segs.join("/"));
+    await gotoNote(await d.getFileHandle(f),"/"+segs.join("/"),decodeURI(h.split("#")[1]||""));
   }catch(e){alert("Couldn't open "+h+": "+(e.message||e.name))}
 }
-const makeMdState=doc=>EditorState.create({doc,extensions:[history(),drawSelection(),lineNumbers(),highlightActiveLineGutter(),EditorView.lineWrapping,mdLive,mdSpellPlugin,mdSpellMenu,EditorView.contentAttributes.of({spellcheck:"false"}),
-  EditorView.domEventHandlers({mousedown:e=>{
-    if(!(e.ctrlKey||e.metaKey))return false;const a=e.target.closest&&e.target.closest(".md-a");
-    if(!a)return false;e.preventDefault();openLink(a.dataset.href);return true}}),
-  keymap.of([{key:"Mod-s",run:()=>{saveNote();return true},preventDefault:true},{key:"Mod-/",run:()=>{setMdSrc(!mdSrc);return true},preventDefault:true},
-    {key:"Mod-b",run:mdWrap("**"),preventDefault:true},{key:"Mod-i",run:mdWrap("*"),preventDefault:true},{key:"Enter",run:mdEnter},
+// ── Note links: [[wikilinks]] between the project folder's .md files (Obsidian style) ──
+// [[Note]] finds Note.md anywhere in the project (same folder first, then the shortest path); [[folder/Note]] is matched from the end of the path.
+// Screenplays link the same way: [[Draft]] (when no Draft.md exists) or [[Draft.fountain]] opens it in the main editor; [[Draft#INT. KITCHEN - DAY]] jumps to that scene.
+// [[Note|text]] shows "text", [[Note#Heading]] jumps to a heading, [[#Heading]] stays in this note. Ctrl/⌘+click opens a link, or offers to create the note.
+const vault={all:[],keys:new Map(),t:0,p:null};   // every .md under the project folder; keys: each tail of every path (lower-case, no extension) -> files
+const vaultDir=p=>p?p.slice(0,p.lastIndexOf("/")):"";
+async function walkMd(dh,path,out,depth){
+  if(depth>12||out.length>5000)return;
+  for await(const [name,h] of dh.entries()){
+    if(name.startsWith(".")||name==="node_modules")continue;
+    if(h.kind==="directory")await walkMd(h,path+"/"+name,out,depth+1);
+    else if(isMd(name)||isFt(name))out.push({name,path:path+"/"+name,h,ft:!isMd(name)});
+  }
+}
+function refreshVault(){
+  if(vault.p)return vault.p;
+  const r=root,out=[];let me;
+  me=vault.p=(async()=>{
+    try{if(r)await walkMd(r,"",out,0)}catch(e){}
+    if(r!==root)return;   // another folder was opened meanwhile
+    const keys=new Map();
+    for(const f of out){
+      f.rp=f.ft?f.path.slice(1):f.path.slice(1).replace(/\.(md|markdown)$/i,"");f.lp=f.rp.toLowerCase();   // screenplays keep their extension in the link text
+      for(const lp of f.ft?[f.lp,f.lp.replace(/\.\w+$/,"")]:[f.lp]){   // a screenplay answers to Name.fountain and, when no note is called that, to plain Name
+        const seg=lp.split("/");
+        for(let i=0;i<seg.length;i++){const k=seg.slice(i).join("/");(keys.get(k)||keys.set(k,[]).get(k)).push(f)}
+      }
+    }
+    vault.all=out;vault.keys=keys;vault.t=Date.now();
+    try{mdView.dispatch({annotations:MdRef.of(1)})}catch(e){}   // restyle links that now resolve (or no longer do)
+  })().finally(()=>{if(vault.p===me)vault.p=null});
+  return me;
+}
+const ensureVault=async age=>{if(root&&(!vault.t||Date.now()-vault.t>age))await refreshVault()};
+function wlFind(target,fromPath){
+  const k=target.split("#")[0].trim().replace(/^\/+/,"").replace(/\.(md|markdown)$/i,"").toLowerCase();
+  const c=k&&vault.keys.get(k);if(!c)return null;
+  if(c.length===1)return c[0];
+  const dir=vaultDir(fromPath);
+  return c.slice().sort((a,b)=>(a.ft?1:0)-(b.ft?1:0)||(vaultDir(b.path)===dir)-(vaultDir(a.path)===dir)||a.path.length-b.path.length)[0];   // notes before screenplays, then same folder, then shortest path
+}
+const navBack=[];
+const navBtn=()=>{$("nBk").disabled=!navBack.length};
+const normHead=t=>t.toLowerCase().replace(/[*_`~=\[\]]/g,"").replace(/\s+/g," ").trim();
+function jumpHeading(hd){
+  const want=normHead(hd||"");if(!want)return;
+  const doc=mdView.state.doc;let fence=false;
+  for(let n=1;n<=doc.lines;n++){
+    const t=doc.line(n).text;
+    if(/^\s*(```|~~~)/.test(t)){fence=!fence;continue}
+    const m=!fence&&/^\s{0,3}#{1,6}\s+(.*?)(?:\s+#+)?\s*$/.exec(t);
+    if(m&&normHead(m[1])===want){const p=doc.line(n).from;mdView.dispatch({selection:{anchor:p},effects:EditorView.scrollIntoView(p,{y:"start",yMargin:16})});mdView.focus();return}
+  }
+}
+function jumpScene(hd){   // [[Draft#INT. KITCHEN - DAY]]: first line of the screenplay that matches the text (scene numbers and a leading . are ignored)
+  const want=normHead(hd||"");if(!want)return;
+  const doc=view.state.doc,clean=t=>normHead(t.replace(/^\./,"").replace(/\s*#[^#\n]+#\s*$/,""));
+  let at=0;
+  for(let n=1;n<=doc.lines&&!at;n++)if(clean(doc.line(n).text)===want)at=doc.line(n).from+1;
+  for(let n=1;n<=doc.lines&&!at;n++)if(clean(doc.line(n).text).startsWith(want))at=doc.line(n).from+1;   // a partial scene name still finds it
+  if(!at)return;
+  const p=at-1;view.dispatch({selection:{anchor:p},effects:EditorView.scrollIntoView(p,{y:"start",yMargin:40})});view.focus();
+}
+async function openFtFile(h,p,heading){   // same as clicking it in the file tree
+  if(handle&&await h.isSameEntry(handle).catch(()=>false)){jumpScene(heading);return}   // already open: keep the unsaved edits
+  if(!await guard("opening "+h.name))return;
+  loadDoc(norm(await (await h.getFile()).text()),0);setHandle(h);setName(h.name);shownFt=p;renderTree();
+  jumpScene(heading);
+}
+async function gotoNote(h,p,heading,skipGuard){   // open a note from a link, remembering where we came from
+  if(isFt(h.name))return openFtFile(h,p,heading);   // screenplays open in the main editor; the note pane stays where it is
+  if(nh&&await h.isSameEntry(nh).catch(()=>false)){jumpHeading(heading);return}
+  const prev=nh&&{h:nh,p:nPath,pos:mdView.state.selection.main.head};
+  await openNote(h,p,skipGuard);
+  if(nh!==h)return;   // the unsaved-changes prompt was cancelled
+  if(prev){navBack.push(prev);if(navBack.length>50)navBack.shift()}
+  navBtn();jumpHeading(heading);
+}
+async function noteBack(){
+  const p=navBack.pop();if(!p)return;navBtn();
+  try{
+    await openNote(p.h,p.p);
+    if(nh===p.h)mdView.dispatch({selection:{anchor:Math.min(p.pos,mdView.state.doc.length)},scrollIntoView:true});
+    else{navBack.push(p);navBtn()}
+  }catch(e){failed("go back",e)}
+}
+async function createNoteFor(page){   // [[Name]] is made next to the current note; [[folder/Name]] is made at that path from the project folder
+  if(!await ensureRW(root))return null;
+  const parts=page.replace(/\\/g,"/").replace(/\.(md|markdown)$/i,"").split("/").map(x=>x.trim().replace(/[:*?"<>|]/g,"")).filter(x=>x&&x!=="."&&x!=="..");
+  if(!parts.length)return null;
+  const name=parts.pop()+".md";let segs=[];
+  if(!page.includes("/")){const b=await noteBase();if(b&&b.dir===root)segs=b.segs}
+  let d=root;for(const x of [...segs,...parts])d=await d.getDirectoryHandle(x,{create:true});
+  try{await d.getFileHandle(name);throw new Error(name+" already exists")}catch(e){if(e.name!=="NotFoundError")throw e}
+  const h=await d.getFileHandle(name,{create:true});
+  await writeTo(h,"# "+name.replace(/\.md$/,"")+"\n\n");
+  refreshVault();renderTree();
+  return{h,path:"/"+[...segs,...parts,name].join("/")};
+}
+async function openWiki(t){
+  try{
+    const [pg,...hs]=t.split("#"),page=pg.trim(),hd=hs.join("#");
+    if(!page)return jumpHeading(hd);
+    if(!root)return alert("Open a project folder (Folder… in the side panel) to follow links between notes.");
+    await noteBase();
+    let f=wlFind(page,nPath);
+    if(!f){await refreshVault();f=wlFind(page,nPath)}   // it may have been added outside the app
+    if(f)return await gotoNote(f.h,f.path,hd);
+    if(isFt(page))return alert("“"+page+"” wasn't found in the project folder.");   // only notes are created from a link
+    if(!confirm("“"+page+"” doesn't exist yet. Create it?"))return;
+    if(nDirty&&!await guardNote("opening "+page))return;   // ask before making a file we might not open
+    const n=await createNoteFor(page);if(n)await gotoNote(n.h,n.path,hd,true);
+  }catch(e){alert("Couldn't open “"+t+"”: "+(e.message||e.name))}
+}
+// ----- typing [[ suggests notes -----
+const wl={el:null,items:[],i:0,from:0};
+function wlClose(){if(wl.el){wl.el.remove();wl.el=null}wl.items=[]}
+function wlDraw(){
+  wl.el.innerHTML=wl.items.map((x,k)=>`<div data-i="${k}"${k===wl.i?' class="on"':""}>${esc(x.f.ft?x.f.name:x.f.name.replace(/\.(md|markdown)$/i,""))}<small>${esc((x.f.ft?"screenplay · ":"")+vaultDir(x.f.path).slice(1))}</small></div>`).join("");
+  const on=wl.el.querySelector(".on");if(on)on.scrollIntoView({block:"nearest"});
+}
+function wlUpdate(v){
+  const sel=v.state.selection.main;
+  if(!root||!sel.empty)return wlClose();
+  const ln=v.state.doc.lineAt(sel.head),m=/\[\[([^\[\]|\n#]*)$/.exec(ln.text.slice(0,sel.head-ln.from));
+  if(!m)return wlClose();
+  if(Date.now()-vault.t>8000&&!vault.p)refreshVault().then(()=>{if(wl.el)wlUpdate(v)});
+  const q=m[1].trim().toLowerCase(),base=f=>f.lp.split("/").pop();
+  const hits=vault.all.filter(f=>f.path!==nPath&&(!q||f.lp.includes(q)))
+    .sort((a,b)=>(base(a).startsWith(q)?0:1)-(base(b).startsWith(q)?0:1)||a.lp.length-b.lp.length).slice(0,8);
+  if(!hits.length)return wlClose();
+  wl.items=hits.map(f=>({f,ins:vault.keys.get(base(f)).filter(g=>!!g.ft===!!f.ft).length>1?f.rp:f.ft?f.name:f.name.replace(/\.(md|markdown)$/i,"")}));   // a duplicate name needs its folder to stay unambiguous
+  wl.from=sel.head-m[1].length;wl.i=0;
+  if(!wl.el){
+    wl.el=document.createElement("div");wl.el.id="wlPop";document.body.appendChild(wl.el);
+    wl.el.onmousedown=e=>{e.preventDefault();const d=e.target.closest("[data-i]");if(d)wlAccept(mdView,+d.dataset.i)};
+  }
+  wlDraw();
+  const c=v.coordsAtPos(sel.head);if(!c)return wlClose();
+  const el=wl.el;el.style.left=Math.max(4,Math.min(c.left,innerWidth-el.offsetWidth-8))+"px";
+  el.style.top=(c.bottom+el.offsetHeight+8>innerHeight?Math.max(4,c.top-el.offsetHeight-4):c.bottom+4)+"px";
+}
+function wlAccept(v,k){
+  const x=wl.items[k];if(!x)return false;
+  const head=v.state.selection.main.head,ins=x.ins+"]]";
+  v.dispatch({changes:{from:wl.from,to:head+(v.state.sliceDoc(head,head+2)==="]]"?2:0),insert:ins},selection:{anchor:wl.from+ins.length},userEvent:"input.complete",scrollIntoView:true});   // the auto-paired ]] is reused
+  wlClose();v.focus();return true;
+}
+const wlMove=d=>{wl.i=(wl.i+d+wl.items.length)%wl.items.length;wlDraw()};
+const wlKeys=keymap.of([
+  {key:"ArrowDown",run:()=>wl.el?(wlMove(1),true):false},{key:"ArrowUp",run:()=>wl.el?(wlMove(-1),true):false},
+  {key:"Enter",run:v=>wl.el?wlAccept(v,wl.i):false},{key:"Tab",run:v=>wl.el?wlAccept(v,wl.i):false},
+  {key:"Escape",run:()=>wl.el?(wlClose(),true):false}]);
+// ----- backlinks: a footer under the note listing the other notes that link to it (click the bar to fold it) -----
+let blOpen=localStorage.getItem("bf_nback")!=="0",blTok=0,blHits=[];
+async function renderBack(){
+  const box=$("nBack"),hd=$("nBackHead"),ls=$("nBackList"),tok=++blTok;
+  box.hidden=!nh;if(!nh)return;
+  const bar=(t)=>hd.textContent=(blOpen?"▾ ":"▸ ")+t;
+  ls.hidden=!blOpen;
+  if(!blOpen){blHits=[];return bar("Backlinks")}
+  await noteBase();const me=nPath;
+  if(!root||!me){bar("Backlinks");ls.textContent="Open this note from a project folder to see which notes link to it.";return}
+  bar("Backlinks");ls.textContent="Looking for links…";
+  await ensureVault(5000);
+  const hits=[],re=/(!?)\[\[([^\[\]\n|\\]+?)(?:\\?\|[^\[\]\n]+)?\]\]/g;
+  for(const f of vault.all.slice(0,1500)){
+    if(f.path===me||f.ft)continue;   // [[double brackets]] in a screenplay are Fountain notes, not links
+    let txt;try{txt=await(await f.h.getFile()).text()}catch(e){continue}
+    if(tok!==blTok)return;
+    if(!txt.includes("[["))continue;
+    scan:for(const ln of txt.split("\n")){
+      re.lastIndex=0;let m;
+      while((m=re.exec(ln))){const g=!m[1]&&wlFind(m[2],f.path);if(g&&g.path===me){hits.push({f,ctx:ln.trim().slice(0,110)});break scan}}
+    }
+  }
+  if(tok!==blTok)return;
+  blHits=hits;
+  bar(hits.length?"Backlinks · "+hits.length:"Backlinks");
+  ls.innerHTML=hits.length?hits.map((h,i)=>`<div class="bl" data-i="${i}" title="${esc(h.f.path.slice(1))}"><b>${esc(h.f.name.replace(/\.(md|markdown)$/i,""))}</b><small>${esc(h.ctx)}</small></div>`).join(""):"No other notes link here yet.";
+}
+const makeMdState=doc=>EditorState.create({doc,extensions:[wlKeys,history(),drawSelection(),lineNumbers(),highlightActiveLineGutter(),EditorView.lineWrapping,mdLive,mmField,cbField,imgEvents,mdSpellPlugin,mdSpellMenu,autoPair(MD_PAIRS,true),EditorView.contentAttributes.of({spellcheck:"false"}),
+  EditorView.domEventHandlers({mousedown:(e,v)=>{
+    const a=e.target.closest&&e.target.closest(".md-a,.md-wl");
+    if(!a||e.button!==0)return false;
+    if(!(e.ctrlKey||e.metaKey)){   // a plain click opens the link, unless its line is being edited (cursor on it) or Markdown view shows the raw text
+      if(e.shiftKey||e.altKey||mdSrc)return false;
+      const doc=v.state.doc,ln=doc.lineAt(v.posAtDOM(a));
+      if(v.state.selection.ranges.some(r=>doc.lineAt(r.from).number<=ln.number&&doc.lineAt(r.to).number>=ln.number))return false;
+    }
+    e.preventDefault();a.dataset.wl!=null?openWiki(a.dataset.wl):openLink(a.dataset.href);return true}}),
+  keymap.of([{key:"Mod-s",run:()=>{saveNote();return true},preventDefault:true},{key:"Alt-ArrowLeft",run:()=>{noteBack();return true},preventDefault:true},{key:"Mod-/",run:()=>{setMdSrc(!mdSrc);return true},preventDefault:true},
+    {key:"Mod-b",run:mdWrap("**"),preventDefault:true},{key:"Mod-i",run:mdWrap("*"),preventDefault:true},{key:"Backspace",run:pairBackspace(MD_PAIRS)},{key:"Enter",run:mdEnter},
     {key:"Tab",run:v=>mdIndent(v,1),shift:v=>mdIndent(v,-1)},...historyKeymap,...defaultKeymap]),
-  EditorView.updateListener.of(u=>{if(u.docChanged){nDirty=true;noteTitle()}})]});
+  EditorView.updateListener.of(u=>{if(u.docChanged){nDirty=true;noteTitle()}
+    if(u.focusChanged&&!u.view.hasFocus)wlClose();else if(u.docChanged||u.selectionSet)wlUpdate(u.view);
+    if(u.selectionSet||u.docChanged)u.view.requestMeasure()})]});   // fences show/hide with the cursor, which changes line heights without a doc change: re-measure so the next click maps to the right line
+
 const mdView=new EditorView({parent:$("mdEd"),state:makeMdState("")});
 
 function noteTitle(){$("nName").textContent=(nDirty?"● ":"")+(nh?nh.name:"")}
 function syncMode(){
+  closeFull();
   $("mdEd").classList.toggle("src",mdSrc);
   $("nMd").classList.toggle("on",mdSrc);
 }
@@ -1444,8 +2128,10 @@ async function openNote(h,p,skipGuard){
     if(!(same&&!nDirty)&&!await guardNote("opening "+h.name))return;
   }
   const text=norm(await (await h.getFile()).text());
-  nh=h;nPath=p||null;mdView.setState(makeMdState(text));nDirty=false;
+  mmOk=false;for(const g of mmGrants){if(g===h||await g.isSameEntry(h).catch(()=>false)){mmOk=true;break}}   // allowed earlier this session? (per note, not global)
+  closeFull();imgReset();nh=h;nPath=p||null;mdView.setState(makeMdState(text));nDirty=false;
   $("notes").hidden=false;applyNotes();noteTitle();renderTree();mdView.focus();
+  wlClose();navBtn();renderBack();ensureVault(15000);
 }
 async function saveNote(){
   if(!nh)return false;
@@ -1463,9 +2149,163 @@ async function guardNote(what){
   if(r==="save")return await saveNote();
   return true;
 }
+// ── Export the open note as a PDF: the Markdown is rendered to a plain white print page and sent to the browser's print dialog (choose "Save as PDF"),
+// the same way the screenplay's PDF button works. Images are embedded, [[links]] print as their text, ```fountain blocks keep the screenplay layout, and
+// ```mermaid diagrams are drawn when this note has been allowed to run Mermaid (otherwise their source is printed). Nothing here touches the network. ──
+const PDF_CSS=`@page{margin:.8in}html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font:11pt/1.5 'Courier Prime','Courier New',Courier,monospace;color:#111;background:#fff;margin:0;overflow-wrap:anywhere}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.3em 0 .45em;break-after:avoid}h1{font-size:20pt}h2{font-size:16pt}h3{font-size:13.5pt}h4,h5,h6{font-size:11pt}h6{color:#555}
+body>:first-child{margin-top:0}p{margin:0 0 .8em}
+ul,ol{margin:0 0 .8em;padding-left:1.6em}li{margin:.15em 0}li>ul,li>ol{margin:.15em 0}li.task{list-style:none;margin-left:-1.3em}
+a,.wl{color:#0b5cad}blockquote{margin:0 0 .8em;padding:.1em 0 .1em 1em;border-left:3px solid #bbb;color:#333}
+code{font-size:.92em;background:#eee;border-radius:3px;padding:.05em .3em}
+pre{margin:0 0 .9em;padding:.6em .9em;background:#f3f3f3;border:1px solid #d6d6d6;border-radius:4px;white-space:pre-wrap;font-size:9.5pt;line-height:1.45}pre code{background:none;padding:0;font-size:inherit}
+hr{border:0;border-top:1px solid #999;margin:1.2em 0}
+table{border-collapse:collapse;margin:0 0 .9em;max-width:100%;font-size:10pt}th,td{border:1px solid #bbb;padding:.3em .6em;vertical-align:top;text-align:left}th{background:#eee}tr{break-inside:avoid}
+img{display:block;max-width:100%;height:auto;margin:.4em 0;break-inside:avoid}mark{background:#ffe97a;color:inherit}
+.mm{margin:0 0 .9em;text-align:center;break-inside:avoid}.mm svg{max-width:100%;height:auto}
+.ft{margin:0 0 .9em;padding:.6em .9em;background:#f7f7f7;border:1px solid #d6d6d6;border-radius:4px;font-size:10pt;line-height:1.35}.ft div{min-height:1em}
+.ft-scene{font-weight:700;text-transform:uppercase}.ft-character{text-transform:uppercase;padding-left:26%}.ft-dialogue{padding-left:10%;padding-right:12%}
+.ft-parenthetical{padding-left:18%;padding-right:16%;font-style:italic}.ft-transition{text-align:right;text-transform:uppercase;font-weight:700}
+.ft-centered{text-align:center}.ft-lyric{font-style:italic;padding-left:6%}.ft-title{color:#777}.ft-pagebreak{border-top:1px dashed #999;margin:.5em 0}`;
+const PDF_EMPH=s=>s.replace(/\*\*\*(?=\S)(.+?)\*\*\*/g,"<b><i>$1</i></b>").replace(/\*\*(?=\S)(.+?)\*\*/g,"<b>$1</b>").replace(/~~(?=\S)(.+?)~~/g,"<s>$1</s>")
+  .replace(/==(?=\S)(.+?)==/g,"<mark>$1</mark>").replace(/\*(?=[^\s*])(.+?)\*/g,"<i>$1</i>").replace(/(^|\W)_(?=[^\s_])(.+?)_(?=\W|$)/g,"$1<i>$2</i>");
+function pdfInline(t,ctx){   // one line of Markdown -> HTML. Finished pieces are parked as placeholders so the emphasis rules can't reach inside them.
+  const keep=[],K=h=>"\u0000"+(keep.push(h)-1)+"\u0000",at=u=>u.replace(/"/g,"%22");
+  let s=esc(t);
+  s=s.replace(/`([^`\n]+)`/g,(m,c)=>K("<code>"+c+"</code>"));
+  s=s.replace(/(!?)\[\[([^\[\]\n|\\]+?)(?:\\?\|([^\[\]\n]+))?\]\]/g,(m,e,g,a)=>K('<span class="wl">'+(a||g.replace("#"," › "))+"</span>"));
+  s=s.replace(/(!?)\[([^\]\n]*)\]\(([^)\s]*)(?:\s+"[^"]*")?\)/g,(m,e,tx,u)=>{
+    if(e)return ctx.imgs.has(u)?K('<img src="'+ctx.imgs.get(u)+'" alt="'+at(tx)+'">'):K('<i>['+(tx||"image")+"]</i>");
+    return /^(https?:|mailto:)/i.test(u)?K('<a href="'+at(u)+'">'+PDF_EMPH(tx)+"</a>"):K(PDF_EMPH(tx));
+  });
+  s=PDF_EMPH(s);
+  while(/\u0000\d+\u0000/.test(s))s=s.replace(/\u0000(\d+)\u0000/g,(m,i)=>keep[+i]);
+  return s;
+}
+function pdfTable(T,ctx){
+  const cells=r=>r.trim().replace(/^\|/,"").replace(/\|$/,"").replace(/\\\|/g,"\u0001").split("|").map(c=>c.replace(/\u0001/g,"|").trim());
+  if(!(T.length>1&&/^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(T[1])))return "<p>"+T.map(x=>pdfInline(x.trim(),ctx)).join("<br>")+"</p>";
+  const al=cells(T[1]).map(c=>/^:-*:$/.test(c)?"center":/-:$/.test(c)?"right":""),
+    row=(r,tag)=>"<tr>"+cells(r).map((c,i)=>`<${tag}${al[i]?` style="text-align:${al[i]}"`:""}>${pdfInline(c,ctx)}</${tag}>`).join("")+"</tr>";
+  return "<table><thead>"+row(T[0],"th")+"</thead><tbody>"+T.slice(2).map(r=>row(r,"td")).join("")+"</tbody></table>";
+}
+function pdfList(L,ctx){   // nested by indent; a line that isn't a list item continues the item above it
+  const items=[];
+  for(const s of L){
+    const m=/^(\s*)([-*+]|\d+[.)])\s+(?:\[( |x)\]\s+)?(.*)$/i.exec(s);
+    if(m)items.push({ind:m[1].replace(/\t/g,"    ").length,ol:/\d/.test(m[2]),n:parseInt(m[2])||1,task:m[3]==null?null:m[3].toLowerCase()==="x",txt:[m[4]]});
+    else if(items.length&&s.trim())items[items.length-1].txt.push(s.trim());
+  }
+  let k=0;
+  const level=()=>{
+    const base=items[k].ind,ol=items[k].ol,tag=ol?"ol":"ul";let h=`<${tag}${items[k].ol&&items[k].n!==1?` start="${items[k].n}"`:""}>`;
+    while(k<items.length&&items[k].ind>=base&&!(items[k].ind===base&&items[k].ol!==ol)){   // switching between bullets and numbers starts a new list
+      const it=items[k++];
+      let li=(it.task!=null?(it.task?"☑":"☐")+" ":"")+it.txt.map(x=>pdfInline(x,ctx)).join("<br>");
+      if(k<items.length&&items[k].ind>it.ind)li+=level();
+      h+=`<li${it.task!=null?' class="task"':""}>${li}</li>`;
+    }
+    return h+`</${tag}>`;
+  };
+  let h="";while(k<items.length)h+=level();
+  return h;
+}
+function pdfFountain(body){   // same classifier as the editor; the colours are dropped, the indents kept
+  const L=maskBone(body).split("\n"),T=classify(L,-1);let h='<div class="ft">';
+  L.forEach((raw,k)=>{
+    const t=T[k]||"action";let r=raw.trim();
+    if(t==="blank"||!r){h+='<div class="ft-blank"></div>';return}
+    if(t==="pagebreak"){h+='<div class="ft-pagebreak"></div>';return}
+    if(t==="scene")r=r.replace(/^\./,"");else if(t==="action")r=r.replace(/^!/,"");else if(t==="lyric")r=r.replace(/^~/,"");
+    else if(t==="character")r=r.replace(/^@/,"").replace(/\s*\^$/,"");else if(t==="transition")r=r.replace(/^>\s?/,"");else if(t==="centered")r=r.replace(/^>\s*/,"").replace(/\s*<$/,"");
+    const x=esc(r).replace(/\*\*\*(?=\S)(.+?)\*\*\*/g,"<b><i>$1</i></b>").replace(/\*\*(?=\S)(.+?)\*\*/g,"<b>$1</b>").replace(/\*(?=[^\s*])(.+?)\*/g,"<i>$1</i>").replace(/(^|\W)_(?=[^\s_])(.+?)_(?=\W|$)/g,"$1<u>$2</u>");
+    h+=`<div class="ft-${t}">${x}</div>`;
+  });
+  return h+"</div>";
+}
+async function pdfCode(lang,body){
+  if(FT_LANG.test(lang))return pdfFountain(body);
+  if(lang.toLowerCase()==="mermaid"&&body.trim()&&mmOk){
+    try{return '<div class="mm">'+await mmRender(body,"default")+"</div>"}catch(e){}   // a diagram that won't draw prints as its source
+  }
+  return "<pre><code>"+esc(body)+"</code></pre>";
+}
+async function pdfBlocks(L,ctx){
+  const out=[],para=[],LI=/^\s*([-*+]|\d+[.)])\s/;
+  const flush=()=>{if(para.length){out.push("<p>"+para.map(x=>pdfInline(x,ctx)).join("<br>")+"</p>");para.length=0}};
+  let i=0;
+  while(i<L.length){
+    const s=L[i];let m;
+    if(!s.trim()){flush();i++;continue}
+    if((m=/^\s*(`{3,}|~{3,})([^`\n]*)/.exec(s))){
+      flush();const ch=m[1][0],len=m[1].length,lang=m[2].trim().split(/[\s{]/)[0],body=[];i++;
+      for(;i<L.length;i++){const t=L[i].trim();if(t.length>=len&&t===ch.repeat(t.length)){i++;break}body.push(L[i])}
+      out.push(await pdfCode(lang,body.join("\n")));continue;
+    }
+    if((m=/^(#{1,6})\s+(.*?)(?:\s+#+)?\s*$/.exec(s))){flush();out.push(`<h${m[1].length}>${pdfInline(m[2],ctx)}</h${m[1].length}>`);i++;continue}
+    if(/^\s{0,3}([-*_])(\s*\1){2,}\s*$/.test(s)){flush();out.push("<hr>");i++;continue}
+    if(/^\s*>/.test(s)){flush();const q=[];for(;i<L.length&&/^\s*>/.test(L[i]);i++)q.push(L[i].replace(/^\s*>\s?/,""));out.push("<blockquote>"+await pdfBlocks(q,ctx)+"</blockquote>");continue}
+    if(/^\s*\|.*\|\s*$/.test(s)){flush();const t=[];for(;i<L.length&&/^\s*\|.*\|\s*$/.test(L[i]);i++)t.push(L[i]);out.push(pdfTable(t,ctx));continue}
+    if(LI.test(s)){
+      flush();const it=[];
+      for(;i<L.length;i++){
+        const t=L[i];
+        if(LI.test(t)||(t.trim()&&/^\s+/.test(t)&&it.length))it.push(t);
+        else if(!t.trim()){let j=i+1;while(j<L.length&&!L[j].trim())j++;if(j<L.length&&LI.test(L[j])){i=j-1;continue}break}   // a blank line between items doesn't end the list
+        else break;
+      }
+      out.push(pdfList(it,ctx));continue;
+    }
+    para.push(s.trim());i++;
+  }
+  flush();return out.join("\n");
+}
+async function imgData(src){   // a note's picture as a data: URL, so the print page doesn't depend on anything in this one
+  const b=await(await fetch(await imgUrl(src))).blob();
+  return await new Promise((res,rej)=>{const f=new FileReader();f.onload=()=>res(f.result);f.onerror=rej;f.readAsDataURL(b)});
+}
+async function mdToHtml(text){
+  let L=text.replace(/\r\n/g,"\n").split("\n");
+  if(L[0].trim()==="---")for(let n=1;n<L.length;n++){const t=L[n].trim();if(t==="---"||t==="..."){L=L.slice(n+1);break}}   // front matter isn't printed
+  const ctx={imgs:new Map()},srcs=new Set();
+  for(const m of L.join("\n").matchAll(/!\[[^\]\n]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g))if(!/^([a-z][a-z0-9+.-]*:|\/\/)/i.test(m[1]))srcs.add(m[1]);   // web images are never fetched
+  await Promise.all([...srcs].map(async u=>{try{ctx.imgs.set(u,await imgData(u))}catch(e){}}));
+  return pdfBlocks(L,ctx);
+}
+async function exportNotePdf(){
+  if(!nh)return;
+  const btn=$("nPdf"),old=btn.textContent;btn.disabled=true;btn.textContent="…";
+  try{
+    const stem=nh.name.replace(/\.(md|markdown)$/i,""),body=await mdToHtml(mdView.state.doc.toString());
+    const f=document.createElement("iframe");f.setAttribute("aria-hidden","true");f.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+    document.body.appendChild(f);
+    await new Promise(r=>{f.onload=r;f.srcdoc=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(stem)}</title><style>${document.getElementById("cp-font").textContent}${PDF_CSS}</style></head><body>${body}</body></html>`});
+    const w=f.contentWindow,d=w.document;
+    if(d.fonts)await Promise.race([Promise.all(["11pt","bold 11pt","italic 11pt"].map(x=>d.fonts.load(x+" 'Courier Prime'"))).then(()=>d.fonts.ready),new Promise(r=>setTimeout(r,3000))]).catch(()=>{});
+    await Promise.all([...d.images].map(im=>im.complete?0:new Promise(r=>{im.onload=im.onerror=r})));
+    const title=document.title;document.title=stem;   // the print dialog suggests this as the file name
+    const done=()=>{document.title=title;f.remove()};
+    w.addEventListener("afterprint",done,{once:true});setTimeout(()=>{if(f.isConnected)done()},180000);
+    w.focus();w.print();
+  }catch(e){failed("export the PDF",e)}
+  finally{btn.disabled=false;btn.textContent=old}
+}
 $("nSave").onclick=saveNote;
-$("nX").onclick=async()=>{if(!await guardNote("closing "+nh.name))return;nh=null;nPath=null;nDirty=false;$("notes").hidden=true;renderTree()};
+$("nPdf").onclick=exportNotePdf;
+$("nImg").onclick=async()=>{
+  if(!nh)return;
+  try{   // if the note's folder isn't known yet, ask for it first; the file chooser then needs a fresh click
+    if(!await noteBase()){const d=await pickNoteDir();if(d){const b=$("nImg");b.textContent="Folder set: click again";setTimeout(()=>b.textContent="Import image",2500)}return}
+    $("nImgIn").click();
+  }catch(e){if(e.name!=="AbortError")failed("choose the images folder",e)}
+};
+$("nImgIn").onchange=e=>{const fs=[...e.target.files];e.target.value="";addImages(mdView,fs,mdView.state.selection.main.head)};
+$("nX").onclick=async()=>{if(!await guardNote("closing "+nh.name))return;nh=null;nPath=null;nDirty=false;mmOk=false;imgReset();$("notes").hidden=true;navBack.length=0;navBtn();wlClose();renderBack();renderTree()};
 $("nMd").onclick=()=>setMdSrc(!mdSrc);
+$("nBk").onclick=noteBack;
+$("nBackHead").onclick=()=>{blOpen=!blOpen;try{localStorage.setItem("bf_nback",blOpen?"1":"0")}catch(e){}renderBack()};
+$("nBackList").onclick=e=>{const d=e.target.closest(".bl"),h=d&&blHits[+d.dataset.i];if(h)gotoNote(h.f.h,h.f.path).catch(err=>failed("open "+h.f.name,err))};
 $("notes").addEventListener("keydown",e=>{   // keep Ctrl+S from reaching the screenplay's Save
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();e.stopPropagation();saveNote()}
 });
@@ -1493,7 +2333,7 @@ $("nSplit").onpointerdown=e=>{   // drag the docked pane's left edge to resize
 addEventListener("beforeunload",e=>{if(nDirty){e.preventDefault();e.returnValue=""}});
 
 // ── 8. LICENSES ──
-$("lt").textContent="MIT License\n\nCopyright (c) 2026 ronin-on-linux\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\nThis project includes third-party software components licensed under open source licenses.\n---\n\nBamboo Fountain utilizes components from Fountain.\n\nMIT License\n\nCopyright (c) 2012 Nima Yousefi & John August\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\n\nBamboo Fountain utilizes components from CodeMirror 6.\n\nMIT License\n\nCopyright (C) 2018 by Marijn Haverbeke <marijn@haverbeke.berlin>, Adrian Heine <mail@adrianheine.de>, and others\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\n\nBamboo Fountain utilizes components from nspell.\n\nMIT License\n\nCopyright (c) 2015 Titus Wormer <tituswormer@gmail.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\n\nBamboo Fountain utilizes the English (en) Hunspell spelling dictionary from dictionary-en, derived from SCOWL.\n\nCopyright 2000-2018 by Kevin Atkinson, and others.\n\nFull license terms: https://github.com/wooorm/dictionaries/blob/main/dictionaries/en/license";
+$("lt").textContent="MIT License\n\nCopyright (c) 2026 ronin-on-linux\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\nThis project includes third-party software components licensed under open source licenses.\n---\n\nBamboo Fountain utilizes components from Fountain.\n\nMIT License\n\nCopyright (c) 2012 Nima Yousefi & John August\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\n\nBamboo Fountain utilizes components from CodeMirror 6.\n\nMIT License\n\nCopyright (C) 2018 by Marijn Haverbeke <marijn@haverbeke.berlin>, Adrian Heine <mail@adrianheine.de>, and others\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\n\nBamboo Fountain utilizes components from nspell.\n\nMIT License\n\nCopyright (c) 2015 Titus Wormer <tituswormer@gmail.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\n\nBamboo Fountain utilizes components from Mermaid.\n\nMIT License\n\nCopyright (c) 2014 - 2022 Knut Sveidqvist\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n---\n\nMermaid is distributed as a single file that bundles the following open source libraries. Each is used under its own license; full texts are in the linked packages and projects.\n\nMIT: cytoscape, cytoscape-cose-bilkent, cytoscape-fcose, dagre-d3-es, dayjs, @iconify/utils, js-yaml, katex, khroma, langium, lodash-es, marked, @mermaid-js/parser, roughjs, @braintree/sanitize-url, stylis, ts-dedent, uuid.\nISC: d3 (https://github.com/d3/d3/blob/main/LICENSE)\nBSD-3-Clause: d3-sankey (https://github.com/d3/d3-sankey/blob/master/LICENSE)\nApache-2.0: chevrotain (https://github.com/Chevrotain/chevrotain/blob/master/LICENSE.txt)\nMPL-2.0 or Apache-2.0: DOMPurify, (c) Cure53 and other contributors (https://github.com/cure53/DOMPurify/blob/3.2.1/LICENSE)\n\nPackage pages: https://www.npmjs.com/package/<name>\n\n---\n\nBamboo Fountain utilizes the English (en) Hunspell spelling dictionary from dictionary-en, derived from SCOWL.\n\nCopyright 2000-2018 by Kevin Atkinson, and others.\n\nFull license terms: https://github.com/wooorm/dictionaries/blob/main/dictionaries/en/license";
 const spellLbl=()=>{$("sSpell").textContent="Spell check: "+(opt.spell?"on":"off");$("spBtn").classList.toggle("on",!!opt.spell)};spellLbl();
 $("sSpell").onclick=$("spBtn").onclick=()=>{opt.spell=!opt.spell;try{localStorage.setItem("bf_opts",JSON.stringify(opt))}catch(e){}spellLbl();closeMenu();respellAll()};
 const lm=$("lm"),closeLic=()=>lm.classList.remove("show");
@@ -1503,7 +2343,7 @@ chrome();
 
 // ── KEYBINDINGS DIALOG ──
 const KB=[["Editing",[["Tab","Cycle line type forward"],["Shift+Tab","Cycle line type backward"],["Enter","New line"],["Ctrl/⌘+B","Bold"],["Ctrl/⌘+I","Italic"],["Ctrl/⌘+U","Underline"],["Ctrl/⌘+Z","Undo"],["Ctrl/⌘+Shift+Z / Ctrl+Y","Redo"]]],
- ["File",[["Ctrl/⌘+O","Open"],["Ctrl/⌘+S","Save"],["Ctrl/⌘+Shift+S","Save As"],["Ctrl/⌘+S in a note","Save the note"],["Ctrl/⌘+/ in a note","Show / hide all Markdown"]]],
+ ["File",[["Ctrl/⌘+O","Open"],["Ctrl/⌘+S","Save"],["Ctrl/⌘+Shift+S","Save As"],["Ctrl/⌘+S in a note","Save the note"],["Ctrl/⌘+/ in a note","Show / hide all Markdown"],["Paste / drop an image in a note","Save to images/ and insert"],["[[ in a note","Pick a note to link to"],["Ctrl/⌘+click a [[link]]","Open the note (or create it)"],["Alt+←","Back to the previous note"]]],
  ["View",[["Ctrl/⌘+/","Show / hide all Fountain markdown"],["Ctrl/⌘+\\","Show / hide outline"],["Esc","Close dialog"]]]];
 $("kl").innerHTML=KB.map(([h,r])=>`<div class="kh">${h}</div>`+r.map(([k,d])=>`<div class="kr"><span>${d}</span><kbd>${k}</kbd></div>`).join("")).join("");
 const km=$("km"),closeKb=()=>km.classList.remove("show");
