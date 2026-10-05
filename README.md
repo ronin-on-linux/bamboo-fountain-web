@@ -51,6 +51,7 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 - Support for rendering mermaid scripts for inline flowcharts and graphs.
 - Support for fountain markdown within markdown notes - within a code block.
 - Support Markdown notes PDF export.
+- Discover Scripts page that offers my favorite screenplays, with double link redundancy in case one pdf gets taken down for some reason or scriptslug.com becomes unresponsive (seems to be happening more frequently as of late.)
 
 > [!NOTE] 
 > This is a project that I decided to vibe code since I have no interest in learning javascript and react at the moment, that allowed me to block out my ideas and get a feel for what I want to do with the native Linux desktop app. My goal is to code the desktop version from scratch and I am using this vibe-coding method to experiment with different methods and ideas as well as receive direction and feedback from users prior to settling down and writing my own code for the native desktop app for Linux and Windows.
