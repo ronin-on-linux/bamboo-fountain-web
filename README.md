@@ -18,12 +18,8 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 ## Future Developments
 - [ ] My next goal is to get a native qt linux desktop version started in development soon, with the aim of replicating and expanding the functionality of Bamboo Fountain, offering a fully featured screenplay writing software for creatives who prefer the open source ecosystem and dislike webkit/pwa/electron apps. (native app will be published under a separate git repo.)
 - [ ] Integrate note encryption of some sort to keep users data safe.
-- [ ] Support for Markdown file linking. (Include backlnks.)(Would only be available if project folder has been opened.)
-- [ ] Support for rendering mermaid scripts for inline flowcharts and graphs.
 - [ ] Better file save/open protocol that is compatible with Firefox and Safari.
 - [ ] Support reorganization of scenes in the outliner.
-- [ ] Support for fountain markdown within markdown notes - within a code block.
-- [ ] Support Markdown notes PDF export.
 
 > [!NOTE]
 > BUG! Save/open window dialogue occasionally throws an error on the website version when using brave/brave-origin. Installing the PWA fixes this issue. Use PWA instead of in browser for the moment if the popup error is bothersome.
@@ -51,6 +47,10 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 - #1# and #101# scene numbering in PDF export.
 - Press Tab to cycle your line through block types. This forces the line to be whichever you pick despite its text (Action, Scene, Character, etc).
 - Hosted on GitHub Pages, but has built in PWA compatibility so you can install and use offline.
+- Support for Markdown file linking. (Include backlnks.)(Would only be available if project folder has been opened.)
+- Support for rendering mermaid scripts for inline flowcharts and graphs.
+- Support for fountain markdown within markdown notes - within a code block.
+- Support Markdown notes PDF export.
 
 > [!NOTE] 
 > This is a project that I decided to vibe code since I have no interest in learning javascript and react at the moment, that allowed me to block out my ideas and get a feel for what I want to do with the native Linux desktop app. My goal is to code the desktop version from scratch and I am using this vibe-coding method to experiment with different methods and ideas as well as receive direction and feedback from users prior to settling down and writing my own code for the native desktop app for Linux and Windows.
