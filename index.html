@@ -1009,17 +1009,17 @@ const flashSaved=()=>{SS.file="Saved "+hms();paint();const b=$("save");b.textCon
 async function writeTo(h,txt){const w=await h.createWritable();await w.write(txt);await w.close()}
 
 // File-type chooser for the file tree's + button. Resolves "fountain", "md", or null when cancelled.
-function askNewKind(){
+function askNewKind(o={}){   // o: {title,q,fsub,msub} lets Open reuse this chooser with its own wording
   return new Promise(res=>{
     dlgOpen=true;
     const wrap=document.createElement("div");
     wrap.style.cssText="position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:#0008";
     const btn="padding:8px 14px;border:1px solid var(--bd);border-radius:5px;background:var(--bg);color:var(--tx);font:inherit;cursor:pointer";
     const choice=(r,t,x)=>`<button data-r="${r}" style="${btn};flex:1;text-align:left"><b>${t}</b><br><span style="opacity:.7;font-size:11px">${x}</span></button>`;
-    wrap.innerHTML=`<div role="alertdialog" aria-modal="true" aria-label="New file" style="background:var(--bar);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:18px 20px;width:360px;max-width:92vw;font:13px/1.45 system-ui,sans-serif;box-shadow:0 8px 30px #0008">
-      <div style="font-weight:700;margin-bottom:6px">New file</div>
-      <div style="color:var(--mu);margin-bottom:14px">What kind of file do you want to create?</div>
-      <div style="display:flex;gap:8px;margin-bottom:12px">${choice("fountain","Screenplay",".fountain")}${choice("md","Note",".md (Markdown)")}</div>
+    wrap.innerHTML=`<div role="alertdialog" aria-modal="true" aria-label="${o.title||'New file'}" style="background:var(--bar);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:18px 20px;width:360px;max-width:92vw;font:13px/1.45 system-ui,sans-serif;box-shadow:0 8px 30px #0008">
+      <div style="font-weight:700;margin-bottom:6px">${o.title||"New file"}</div>
+      <div style="color:var(--mu);margin-bottom:14px">${o.q||"What kind of file do you want to create?"}</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">${choice("fountain","Screenplay",o.fsub||".fountain")}${choice("md","Note",o.msub||".md (Markdown)")}</div>
       <div style="display:flex;justify-content:flex-end"><button data-r="cancel" style="${btn}">Cancel</button></div></div>`;
     const def=wrap.querySelector('[data-r="fountain"]');def.style.cssText+=";background:var(--ac);color:var(--bg);border-color:var(--ac)";
     const done=r=>{document.removeEventListener("keydown",onKey,true);wrap.remove();dlgOpen=false;res(r==="cancel"?null:r)};
@@ -1045,6 +1045,15 @@ $("new").onclick=async()=>{
 };
 
 async function openFile(){
+  const kind=FSA?await askNewKind({title:"Open file",q:"What kind of file do you want to open?",fsub:".fountain, .txt",msub:".md, .markdown"}):"fountain";if(!kind)return;   // same chooser as New
+  if(kind==="md"){
+    try{
+      if(nh&&!await guardNote("opening another note"))return;        // ask first, so cancelling the picker never discards anything
+      const [h]=await showOpenFilePicker({types:[{description:"Markdown",accept:{"text/markdown":[".md",".markdown"]}}],multiple:false,startIn:root||undefined});
+      await openNote(h,null,true);renderTree();
+    }catch(e){if(e.name!=="AbortError")failed("open the note",e)}
+    return;
+  }
   if(!await guard("opening another file"))return;     // save/discard prompt comes first, then the file picker
   if(!FSA)return $("file").click();
   let h;
