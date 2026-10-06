@@ -1,7 +1,7 @@
 /* Bamboo Fountain service worker
  * - Precaches the app shell + CodeMirror modules (from esm.sh) so the editor works offline.
  * - Bump VERSION whenever index.html changes to roll out an update. */
-const VERSION = 'v52';
+const VERSION = 'v54';
 const SHELL_CACHE = 'bf-shell-' + VERSION;
 const CDN_CACHE = 'bf-cdn-v1'; // CodeMirror URLs are version-pinned, so this cache can persist across app versions
 
@@ -146,4 +146,3 @@ self.addEventListener('fetch', event => {
     })());
   }
 });
-
