@@ -29,6 +29,7 @@ bamboo-fountain-web provides a writing experience that is pleasantly simple, all
 - Permissive MIT License.
 - Open and save locally, with background autosave recovery to localStorage and manual backup functions.
 - 'Ctrl + S' and 'Ctrl + Shift + S' save and save as.
+- Autosave to file toggle.
 - 'Ctrl + Z' and 'Ctrl + Y' undo/redo.
 - 'Ctrl + B', 'Ctrl + U' and 'Ctrl + I' for bold, underline and italics.
 - Intuitive Title Page and Screenplay editor, with live line formatting, rebuilt to fully support markdown in the editor.
