@@ -50,6 +50,12 @@ html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%}
 .bar.bot{border:0;border-top:1px solid var(--bd);overflow-x:auto}
 button{background:transparent;color:var(--mu);border:1px solid var(--bd);border-radius:5px;padding:4px 9px;font:inherit;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;flex-shrink:0}
 button:hover{color:var(--tx)}button.on{background:var(--ac);border-color:var(--ac);color:var(--bg)}
+/* Toggle switches: label + small slider, so on/off settings look different from action buttons */
+button.tg{display:inline-flex;align-items:center;gap:7px}
+button.tg::after{content:"";flex:none;width:24px;height:13px;box-sizing:border-box;border:1px solid var(--bd);border-radius:999px;background-color:color-mix(in srgb,var(--tx) 10%,transparent);background-image:radial-gradient(circle closest-side,var(--mu) 92%,transparent);background-repeat:no-repeat;background-size:9px 9px;background-position:2px 50%;transition:background-color .15s,background-position .15s,border-color .15s}
+button.tg.on{background:transparent;border-color:var(--bd);color:var(--tx)}
+button.tg.on::after{background-color:var(--ac);border-color:var(--ac);background-image:radial-gradient(circle closest-side,var(--bg) 92%,transparent);background-position:calc(100% - 2px) 50%}
+button.tg:disabled{opacity:.4;cursor:not-allowed}
 #fmt button[data-t=scene]{color:var(--ac)}#fmt button[data-t=character],#fmt button[data-t=centered]{color:var(--ch)}
 #fmt button[data-t=transition]{color:var(--tr)}#fmt button[data-t=lyric]{color:var(--ly)}#fmt button[data-t=parenthetical]{color:var(--mu)}
 #fmt button[data-t=action],#fmt button[data-t=dialogue]{color:var(--tx)}   /* same colour as the action/dialogue text in the editor */
@@ -285,7 +291,7 @@ button:hover{color:var(--tx)}button.on{background:var(--ac);border-color:var(--a
 </head><body>
 <div id="app">
  <div class="bar"><button id="outBtn" title="Show / hide outline (Ctrl+\)">☰</button><b style="color:var(--ac)">Bamboo Fountain</b><span class="vsep"></span>
-  <div class="dd"><button id="sceneBtn">Scene ▾</button><div class="dm" id="sceneMenu"></div></div><div class="dd"><button id="titleBtn">Title ▾</button><div class="dm" id="titleMenu"></div></div><button id="md" title="Show all Fountain markdown (Ctrl+/)">Markdown</button><button id="spBtn" title="Spell check on / off (right-click a flagged word for suggestions)">Spellcheck</button><button id="stats" title="Page, word and runtime statistics">Stats</button><span class="sp"></span><span id="docname" class="dn"></span><span class="sp"></span><button id="new">New</button><button id="open" title="Open (Ctrl/⌘+O)">Open</button><button id="save" title="Save (Ctrl/⌘+S)">Save</button><button id="saveas" title="Save As (Ctrl/⌘+Shift+S)">Save As</button><button id="pdf">PDF</button><span class="vsep"></span><button id="theme">Theme</button>
+  <div class="dd"><button id="sceneBtn">Scene ▾</button><div class="dm" id="sceneMenu"></div></div><div class="dd"><button id="titleBtn">Title ▾</button><div class="dm" id="titleMenu"></div></div><button id="md" class="tg" role="switch" title="Show all Fountain markdown (Ctrl+/)">Markdown</button><button id="spBtn" class="tg" role="switch" title="Spell check on / off (right-click a flagged word for suggestions)">Spellcheck</button><button id="stats" title="Page, word and runtime statistics">Stats</button><span class="sp"></span><span id="docname" class="dn"></span><span class="sp"></span><button id="new">New</button><button id="open" title="Open (Ctrl/⌘+O)">Open</button><button id="save" title="Save (Ctrl/⌘+S)">Save</button><button id="autoFile" class="tg" role="switch">Autosave</button><button id="saveas" title="Save As (Ctrl/⌘+Shift+S)">Save As</button><button id="pdf">PDF</button><span class="vsep"></span><button id="theme">Theme</button>
   <input id="file" type="file" accept=".fountain,.txt" hidden></div>
  <div id="tp"></div>
  <div id="pm"><div class="ph"><b style="color:var(--tx)">Print Preview</b><span class="sp"></span><span>Watermark</span>
@@ -300,7 +306,7 @@ button:hover{color:var(--tx)}button.on{background:var(--ac);border-color:var(--a
 <div id="dsm"><div id="dsc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Discover Scripts</b><span class="sp"></span><button id="dsx">×</button></div><div id="dsl"></div></div></div>
 <div id="stm"><div id="stc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Bamboo Fountain</b><span class="sp"></span><button id="stx" title="Close (Esc)">×</button></div><div class="stp">Live Fountain screenplay editor. What would you like to do?</div><div id="stl"></div></div></div>
 <div id="lm"><div id="lc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Licenses</b><span class="sp"></span><button id="lx">×</button></div><pre id="lt"></pre></div></div>
-  <div id="main"><div id="side"><div id="sideSplit" title="Drag to resize (double-click to reset)"></div><div id="sideHead"><span>Outline</span><button id="sideToggle" title="Collapse outline">‹</button></div><div id="sideList"></div><div id="fileSec" class="empty"><div id="fileHead"><span id="projName">Files</span><span><button id="fNew" title="New note in folder root" hidden>+</button><button id="fRef" title="Refresh" hidden>↻</button><button id="fX" title="Close folder" hidden>×</button><button id="fOpenBtn" title="Open a project folder">Folder…</button></span></div><div id="fileTree"></div></div></div><div id="ed"></div><div id="notes" hidden><div id="nSplit"></div><div id="nCard"><div id="nHead"><span class="nl"><button id="nMd" title="Show all markdown (Ctrl/⌘+/)">Markdown</button><button id="nBk" title="Back to the previous note (Alt+←)" disabled>‹</button></span><span id="nName"></span><span class="nr"><button id="nImg" title="Import an image (you can also paste or drop one into the note)">Import image</button><input type="file" id="nImgIn" accept="image/*" multiple hidden><button id="nSave">Save</button><button id="nPdf" title="Export this note as a PDF (opens the print dialog: choose Save as PDF)">PDF</button><button id="nX" title="Close">×</button></span></div><div id="nBody"><div id="mdEd"></div></div><div id="nBack" hidden><div id="nBackHead"></div><div id="nBackList"></div></div></div></div></div>
+  <div id="main"><div id="side"><div id="sideSplit" title="Drag to resize (double-click to reset)"></div><div id="sideHead"><span>Outline</span><button id="sideToggle" title="Collapse outline">‹</button></div><div id="sideList"></div><div id="fileSec" class="empty"><div id="fileHead"><span id="projName">Files</span><span><button id="fNew" title="New note in folder root" hidden>+</button><button id="fRef" title="Refresh" hidden>↻</button><button id="fX" title="Close folder" hidden>×</button><button id="fOpenBtn" title="Open a project folder">Folder…</button></span></div><div id="fileTree"></div></div></div><div id="ed"></div><div id="notes" hidden><div id="nSplit"></div><div id="nCard"><div id="nHead"><span class="nl"><button id="nMd" class="tg" role="switch" title="Show all markdown (Ctrl/⌘+/)">Markdown</button><button id="nBk" title="Back to the previous note (Alt+←)" disabled>‹</button></span><span id="nName"></span><span class="nr"><button id="nImg" title="Import an image (you can also paste or drop one into the note)">Import image</button><input type="file" id="nImgIn" accept="image/*" multiple hidden><button id="nSave">Save</button><button id="nPdf" title="Export this note as a PDF (opens the print dialog: choose Save as PDF)">PDF</button><button id="nX" title="Close">×</button></span></div><div id="nBody"><div id="mdEd"></div></div><div id="nBack" hidden><div id="nBackHead"></div><div id="nBackList"></div></div></div></div></div>
  <div class="bar bot" id="fmt"></div>
  <div class="bar bot" id="stat" style="font-size:9px;color:var(--mu)"><span id="st1"></span><span class="sp"></span><span id="st2"><span id="sFile"></span><span id="sLoc"></span><span id="sBak"></span><span id="sSpell" title="Turn spell check on or off"></span><span id="sLic" title="Open-source licenses">Licenses</span></span></div>
 </div>
@@ -348,10 +354,11 @@ class Num extends WidgetType{constructor(n,side){super();this.n=n;this.side=side
 const hide=Decoration.replace({}),dim=Decoration.mark({class:"mkr"}),mk=c=>Decoration.mark({class:c});
 const EM={"***":"b i","**":"b","*":"i","_":"u"};
 let info={T:[],L:[],scenes:[]},showNums=true;
-let opt={spell:true,nums:true,numStyle:"1",sceneBold:true,sceneUl:false,titleBold:false,titleUl:false,titleCaps:false};
+let opt={spell:true,nums:true,numStyle:"1",epNum:1,sceneBold:true,sceneUl:false,titleBold:false,titleUl:false,titleCaps:false};
 try{Object.assign(opt,JSON.parse(localStorage.getItem("bf_opts")||"{}"))}catch(e){}
+opt.epNum=Math.min(99,Math.max(1,parseInt(opt.epNum)||1));
 showNums=opt.nums;
-const snFmt=n=>opt.numStyle==="101"?String(100+n):String(n);   // scene number text for the chosen style (editor + PDF)
+const snFmt=n=>opt.numStyle==="101"?String(opt.epNum*100+n):String(n);   // scene number text for the chosen style (editor + PDF)
 let showRaw=localStorage.getItem("bf_raw")==="1";   // markdown toggle: show every marker, not just on the active line
 let fileName=localStorage.getItem("bf_name")||"untitled.fountain";
 let dirty=localStorage.getItem("bf_dirty")==="1";   // unsaved changes since last save/open
@@ -832,17 +839,38 @@ const MENUS={sceneMenu:[["PDF","nums","Show scene numbers"],["","sceneBold","Bol
 const NUMSTYLES=[["1","1, 2, 3 …"],["101","101, 102, 103 …"]];
 if(!NUMSTYLES.some(x=>x[0]===opt.numStyle))opt.numStyle="1";
 Object.entries(MENUS).forEach(([id,items])=>{
-  $(id).innerHTML=items.map(([h,k,l])=>`${h?`<small>${h}</small>`:""}<label><input type="checkbox" data-k="${k}" ${opt[k]?"checked":""}> ${l}</label>`+(k==="nums"?`<div id="numStyle" style="display:${opt.nums?"flex":"none"};flex-direction:column;gap:6px;padding-left:22px">${NUMSTYLES.map(([v,t])=>`<label><input type="radio" name="nstyle" value="${v}" ${opt.numStyle===v?"checked":""}> ${t}</label>`).join("")}</div>`:"")).join("");
+  $(id).innerHTML=items.map(([h,k,l])=>`${h?`<small>${h}</small>`:""}<label><input type="checkbox" data-k="${k}" ${opt[k]?"checked":""}> ${l}</label>`+(k==="nums"?`<div id="numStyle" style="display:${opt.nums?"flex":"none"};flex-direction:column;gap:6px;padding-left:22px">${NUMSTYLES.map(([v,t])=>`<label><input type="radio" name="nstyle" value="${v}" ${opt.numStyle===v?"checked":""}> ${t}</label>`+(v==="101"?`<label id="epRow" style="display:${opt.numStyle==="101"?"flex":"none"};align-items:center;gap:6px;padding-left:22px">Episode # <input type="number" id="epNum" name="epnum" min="1" max="99" value="${opt.epNum}" style="width:56px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:4px;padding:2px 4px"> <span style="color:var(--mu)">(ep 9 → 901…)</span></label>`:"")).join("")}<button type="button" id="applyNums" title="Write the scene numbers shown here into the script as Fountain #n# tags (undo with Ctrl+Z)" style="margin-top:4px;padding:5px 8px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:4px;cursor:pointer;font:inherit;font-size:11px;text-align:left;line-height:1.3">Lock final scene numbers to .fountain</button></div>`:"")).join("");
 });
 $("ed").classList.toggle("nobold-scene",!opt.sceneBold);$("ed").classList.toggle("ul-scene",!!opt.sceneUl);
 document.querySelectorAll(".dm").forEach(m=>{
-  m.onchange=e=>{if(e.target.name==="nstyle"){opt.numStyle=e.target.value;localStorage.setItem("bf_opts",JSON.stringify(opt));view.dispatch({annotations:Pend.of(1)});return}
+  m.oninput=e=>{if(e.target.name!=="epnum")return;const v=parseInt(e.target.value);if(!(v>=1))return;opt.epNum=Math.min(99,v);localStorage.setItem("bf_opts",JSON.stringify(opt));view.dispatch({annotations:Pend.of(1)})};
+  m.onchange=e=>{if(e.target.name==="epnum"){const v=Math.min(99,Math.max(1,parseInt(e.target.value)||1));e.target.value=v;opt.epNum=v;localStorage.setItem("bf_opts",JSON.stringify(opt));view.dispatch({annotations:Pend.of(1)});return}
+    if(e.target.name==="nstyle"){opt.numStyle=e.target.value;$("epRow").style.display=opt.numStyle==="101"?"flex":"none";localStorage.setItem("bf_opts",JSON.stringify(opt));view.dispatch({annotations:Pend.of(1)});return}
     const k=e.target.dataset.k;if(!k)return;opt[k]=e.target.checked;localStorage.setItem("bf_opts",JSON.stringify(opt));
     if(k==="nums")$("numStyle").style.display=opt.nums?"flex":"none";
     if(k==="sceneBold")$("ed").classList.toggle("nobold-scene",!opt.sceneBold);
     if(k==="sceneUl")$("ed").classList.toggle("ul-scene",!!opt.sceneUl);
     if(k==="nums"){showNums=opt.nums;view.dispatch({annotations:Pend.of(1)});chrome()}};
 });
+// Write the current scene numbers into the document as Fountain scene-number tags (INT. KITCHEN - DAY #101#), replacing any existing tags. One undo step.
+function applySceneNumbers(){
+  const doc=view.state.doc,L=maskBone(doc.toString()).split("\n"),T=classify(L,doc.lineAt(view.state.selection.main.head).number-1);
+  const changes=[];let n=0;
+  for(let i=0;i<L.length;i++){
+    if(T[i]!=="scene")continue;
+    n++;
+    const ln=doc.line(i+1),base=ln.text.replace(NUM,"").trimEnd(),next=base+" #"+snFmt(n)+"#";
+    if(next!==ln.text)changes.push({from:ln.from,to:ln.to,insert:next});
+  }
+  if(changes.length)view.dispatch({changes});
+  return n;
+}
+$("applyNums").onclick=e=>{
+  e.preventDefault();e.stopPropagation();
+  const n=applySceneNumbers(),b=e.currentTarget;
+  b.textContent=n?`Applied to ${n} scene${n===1?"":"s"} ✓`:"No scenes found";
+  setTimeout(()=>b.textContent="Lock in final scene numbers in .fountain",2000);
+};
 [["sceneBtn","sceneMenu"],["titleBtn","titleMenu"]].forEach(([b,m])=>{
   $(b).onclick=e=>{e.stopPropagation();const open=!$(m).classList.contains("show");document.querySelectorAll(".dm").forEach(x=>x.classList.remove("show"));$("tp").classList.remove("show");$(m).classList.toggle("show",open)};
 });
@@ -1293,6 +1321,7 @@ const SS={loc:"",bak:"",file:"",bakAct:false};
 const hms=()=>new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
 function paint(){$("sFile").textContent=SS.file;$("sLoc").textContent=SS.loc;$("sBak").textContent=SS.bak;$("sBak").classList.toggle("act",SS.bakAct)}
 function queueAutosave(){
+  queueFileSave();
   SS.loc="Autosaving…";paint();clearTimeout(window._a);
   window._a=setTimeout(()=>{
     try{localStorage.setItem("bf_cm_doc",view.state.doc.toString());SS.loc="Autosaved "+hms()}catch(e){console.error(e);SS.loc="Browser autosave failed"}
@@ -1333,6 +1362,53 @@ function queueBackup(){   // 3 s after typing stops, and at least every 30 s whi
   clearTimeout(bakTimer);bakFirst=bakFirst||Date.now();
   bakTimer=setTimeout(()=>{bakFirst=0;writeBackup()},Math.max(0,Math.min(3000,bakFirst+30000-Date.now())));
 }
+// ── Autosave to the opened file (the Autosave toggle between Save and Save As). Runs in addition to the localStorage autosave and the .bak file, never instead of them. ──
+// Writes only when a file handle exists and write permission is already granted (a browser only asks for permission on a click, so after a reload press Save once to resume).
+let autoFile=localStorage.getItem("bf_autofile")==="1",fileTimer=0,fileFirst=0,fileBusy=false,fileAgain=false;
+function autoFileLbl(){
+  const b=$("autoFile"),on=autoFile&&FSA;
+  b.disabled=!FSA;b.classList.toggle("on",on);
+  b.title=!FSA?"Autosave to file isn't available: "+FSA_WHY:on?"Autosave to the open file is ON. Click to turn off (the browser autosave and .bak backup keep running)":"Autosave to the open file is OFF. Click to turn on (the browser autosave and .bak backup keep running)";
+}
+function setAutoFile(v){autoFile=v;try{localStorage.setItem("bf_autofile",v?"1":"0")}catch(e){}autoFileLbl()}
+function queueFileSave(){   // 2 s after typing stops, and at least every 15 s while typing continues
+  if(!autoFile||!FSA)return;
+  if(!handle){SS.file="Autosave to file: press Save once to choose a file";return}
+  clearTimeout(fileTimer);fileFirst=fileFirst||Date.now();
+  fileTimer=setTimeout(()=>{fileFirst=0;autoFileWrite()},Math.max(0,Math.min(2000,fileFirst+15000-Date.now())));
+}
+async function autoFileWrite(){
+  if(!autoFile||!FSA||!handle)return;
+  if(fileBusy){fileAgain=true;return}
+  const h=handle;
+  try{if(await h.queryPermission(RW)!=="granted"){SS.file="Autosave to file paused – press Save to resume";paint();return}}
+  catch(e){return}
+  const txt=view.state.doc.toString();
+  fileBusy=true;
+  try{
+    await writeTo(h,txt);
+    if(h===handle){                                    // still the same document
+      if(view.state.doc.toString()===txt){setDirty(false);chrome()}   // typed more while writing? stay unsaved, the next pass catches it
+      SS.file="Saved "+hms()+" (auto)";
+    }
+  }catch(e){console.error(e);SS.file="Autosave to file failed – press Save"}
+  fileBusy=false;paint();
+  if(fileAgain){fileAgain=false;queueFileSave()}
+}
+$("autoFile").onclick=async()=>{
+  if(!FSA)return;
+  if(autoFile){setAutoFile(false);clearTimeout(fileTimer);fileFirst=0;SS.file="";paint();return}
+  setAutoFile(true);                                   // this click is the user gesture the browser needs for a file picker / permission prompt
+  try{
+    if(!handle){if(!await saveAs())return setAutoFile(false)}   // untitled: choose the file first; cancelling leaves the toggle off
+    else{
+      if(await handle.queryPermission(RW)!=="granted"&&await handle.requestPermission(RW)!=="granted")return setAutoFile(false);
+      if(dirty)await save();
+    }
+  }catch(e){setAutoFile(false);if(e.name!=="AbortError")failed("turn on autosave to file",e)}
+};
+autoFileLbl();
+document.querySelectorAll("button.tg").forEach(b=>{const sync=()=>b.setAttribute("aria-checked",b.classList.contains("on")?"true":"false");sync();new MutationObserver(sync).observe(b,{attributes:true,attributeFilter:["class"]})});
 $("sBak").onclick=async()=>{
   if(!SS.bakAct||!handle)return;
   try{
@@ -2353,17 +2429,60 @@ km.onclick=e=>{if(e.target===km)closeKb()};addEventListener("keydown",e=>{if(e.k
 const DS_BASE="https://assets.scriptslug.com/live/pdf/scripts/";
 const DS=[
  ["Craig Mazin",[["403","How to Write a Movie","https://www.youtube.com/watch?v=i27IKil-LXw"]]],
- ["Chernobyl (2019)",[["101","1:23:45","chernobyl-101-11-23-45-2019.pdf?v=1745342325"],["102","Please Remain Calm","chernobyl-102-please-remain-calm-2019.pdf?v=1745342325"],["103","Open Wide, O Earth","chernobyl-103-open-wide-o-earth-2019.pdf?v=1745342325"],["104","The Happiness of All Mankind","chernobyl-104-the-happiness-of-all-mankind-2019.pdf?v=1745342325"],["105","Vichnaya Pamyat","chernobyl-105-vichnaya-pamyat-2019.pdf?v=1745342326"]],"Written by Craig Mazin"],
- ["Andor",[["209","Welcome to the Rebellion","andor-209-welcome-to-the-rebellion-2025.pdf?v=1772524031"]],"Written by Dan Gilroy"],
- ["Shogun",[["101","Anjin","shogun-101-anjin-2024.pdf?v=1745342204"]],"Written by Rachel Kondo &amp; Justin Marks"],
- ["The Social Network",[["","Read screenplay","the-social-network-2010.pdf?v=1729115039"]],"Screenplay by Aaron Sorkin"],
- ["The Dark Knight",[["","Read screenplay","the-dark-knight-2008.pdf?v=1729115013"]],"Screenplay by Jonathan Nolan &amp; Christopher Nolan"]];
-const dsLink=(href,inner)=>`<a class="dsb" href="${href}" target="_blank" rel="noopener noreferrer">${inner}</a>`;
-$("dsl").innerHTML=`<div class="dp">Recommended talks and screenplays (PDFs from ScriptSlug). Every link opens in a new tab.</div>`
-  +DS.map(([h,l,by])=>`<h4>${h}${by?`<span class="dsw">${by}</span>`:""}</h4><div class="dsr">${l.map(([n,t,u])=>dsLink(/^https?:/.test(u)?u:DS_BASE+u,(n?`<span class="dsn">${n}</span>`:"")+t)).join("")}</div>`).join("")
+ ["Chernobyl (2019)",[["101","1:23:45","chernobyl-101-11-23-45-2019.pdf?v=1745342325","https://johnaugust.com/wp-content/uploads/2019/06/Chernobyl_Episode-11_23_45.pdf"],["102","Please Remain Calm","chernobyl-102-please-remain-calm-2019.pdf?v=1745342325","https://johnaugust.com/wp-content/uploads/2019/06/Chernobyl_Episode-2Please-Remain-Calm.pdf"],["103","Open Wide, O Earth","chernobyl-103-open-wide-o-earth-2019.pdf?v=1745342325","https://johnaugust.com/wp-content/uploads/2019/06/Chernobyl_Episode-3Open-Wide-O-Earth.pdf"],["104","The Happiness of All Mankind","chernobyl-104-the-happiness-of-all-mankind-2019.pdf?v=1745342325","https://johnaugust.com/wp-content/uploads/2019/06/Chernobyl_Episode-4The-Happiness-Of-All-Mankind.pdf"],["105","Vichnaya Pamyat","chernobyl-105-vichnaya-pamyat-2019.pdf?v=1745342326","https://johnaugust.com/wp-content/uploads/2019/06/Chernobyl_Episode-5Vichnaya-Pamyat.pdf"]],"Written by Craig Mazin"],
+ ["Andor",[["209","Welcome to the Rebellion","andor-209-welcome-to-the-rebellion-2025.pdf?v=1772524031","https://assets.debut.disney.com/documents/Andor%20209%20--%20POST%20FINAL%20--%203.3.24%5B1%5D.pdf"]],"Written by Dan Gilroy"],
+ ["Shogun",[["101","Anjin","shogun-101-anjin-2024.pdf?v=1745342204","https://deadline.com/wp-content/uploads/2024/05/Shogun-Script-It-Starts-On-The-Page-2024.pdf"]],"Written by Rachel Kondo &amp; Justin Marks"],
+ ["The Social Network",[["","Read screenplay","the-social-network-2010.pdf?v=1729115039","https://deadline.com/wp-content/uploads/2011/01/thesocialnetwork-dl.pdf"]],"Screenplay by Aaron Sorkin"],
+ ["The Dark Knight",[["","Read screenplay","the-dark-knight-2008.pdf?v=1729115013","https://www.nolanfans.com/library/pdf/thedarkknight-screenplay.pdf"]],"Screenplay by Jonathan Nolan &amp; Christopher Nolan"]];
+// ScriptSlug availability: probe at launch and whenever the dialog opens; if ScriptSlug looks down, swap in each entry's backup link (Internet Archive if it has none).
+const DS_PROBE_IMG="https://assets.scriptslug.com/live/img/x/share/4779/share-home_bcc133798c.jpg"; // any small image on the same host; update if it ever 404s
+const DS_ARCHIVE="https://web.archive.org/web/2/";
+let dsDown=false,dsChecked=0;
+const isSlug=u=>/^https?:\/\/([^\/]+\.)?scriptslug\.com(\/|$)/.test(u);
+const dsHref=(u,bak)=>!dsDown||!isSlug(u)?u:(bak||DS_ARCHIVE+u);   // hand-picked backup if we have one, else the Internet Archive
+const dsLink=(href,inner,bak)=>`<a class="dsb" href="${dsHref(href,bak)}" data-orig="${href}" data-bak="${bak||""}" target="_blank" rel="noopener noreferrer">${inner}</a>`;
+function probeSlug(timeout=6000){
+  return new Promise(res=>{
+    let done=false;const fin=v=>{if(!done){done=true;clearTimeout(t);res(v)}};
+    const t=setTimeout(()=>fin(false),timeout);
+    const img=new Image();                       // an image fails on timeouts, DNS errors AND 5xx/HTML error pages, which a no-cors fetch cannot tell apart from success
+    img.onload=()=>fin(true);img.onerror=()=>fin(false);
+    img.src=DS_PROBE_IMG+"?_="+Date.now();
+  });
+}
+function pingMain(timeout){                      // connection-level check of the main site (DNS / refused / timeout); opaque response is fine
+  return new Promise(res=>{
+    const c=new AbortController(),t=setTimeout(()=>{c.abort();res(false)},timeout);
+    fetch("https://www.scriptslug.com/",{method:"HEAD",mode:"no-cors",cache:"no-store",signal:c.signal})   // HEAD: headers only, no page body
+      .then(()=>{clearTimeout(t);res(true)},()=>{clearTimeout(t);res(false)});
+  });
+}
+const probeAll=async t=>(await Promise.all([probeSlug(t),pingMain(t)])).every(Boolean);   // down if EITHER the assets host or the main site fails
+let dsRun=null;
+async function checkSlug(){
+  if(dsRun)return dsRun;
+  return dsRun=checkSlug2().finally(()=>dsRun=null);
+}
+async function checkSlug2(){
+  const note=$("dsNote");
+  if(/[?&]slugdown\b/.test(location.search)){dsDown=true;dsApply(note);return}   // test switch: open the app with ?slugdown=1 to force the backup links
+  if(Date.now()-dsChecked<120000)return;         // re-check at most every 2 minutes
+  dsChecked=Date.now();
+  if(!navigator.onLine){dsDown=false;note.hidden=true;return}   // offline is not ScriptSlug's fault: leave links alone
+  let up=await probeAll(5000);
+  if(!up)up=await probeAll(4000);                // one retry before declaring it down
+  dsDown=!up;dsApply(note);
+}
+function dsApply(note){
+  document.querySelectorAll("#dsl a[data-orig]").forEach(a=>a.href=dsHref(a.dataset.orig,a.dataset.bak));
+  note.hidden=!dsDown;
+}
+$("dsl").innerHTML=`<div class="dp">Recommended talks and screenplays (PDFs from ScriptSlug). Every link opens in a new tab.</div><div class="dp" id="dsNote" hidden style="color:#e0b050">ScriptSlug looks unreachable right now, so these links are using redundant links to ensure a smooth experience.</div>`
+  +DS.map(([h,l,by])=>`<h4>${h}${by?`<span class="dsw">${by}</span>`:""}</h4><div class="dsr">${l.map(([n,t,u,b])=>dsLink(/^https?:/.test(u)?u:DS_BASE+u,(n?`<span class="dsn">${n}</span>`:"")+t,b)).join("")}</div>`).join("")
   +`<div class="dsf">${dsLink("https://scriptslug.com","Browse ScriptSlug.com ↗")}</div>`;
 const dsm=$("dsm"),closeDs=()=>dsm.classList.remove("show");
-$("discoverBtn").onclick=e=>{e.preventDefault();dsm.classList.add("show");dsm.scrollTop=0};$("dsx").onclick=closeDs;
+$("discoverBtn").onclick=e=>{e.preventDefault();dsm.classList.add("show");dsm.scrollTop=0;checkSlug()};
+checkSlug();                                     // also probe at launch, so the links are already right when the dialog opens$("dsx").onclick=closeDs;
 dsm.onclick=e=>{if(e.target===dsm)closeDs()};addEventListener("keydown",e=>{if(e.key==="Escape"&&dsm.classList.contains("show")){closeDs();e.stopImmediatePropagation()}});
 // ── STARTUP DIALOG: shown on every launch. Each choice reuses the existing action it names. ──
 const stm=$("stm"),closeStart=()=>stm.classList.remove("show");
