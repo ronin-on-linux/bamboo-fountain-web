@@ -323,12 +323,12 @@ button.tg:disabled{opacity:.4;cursor:not-allowed}
 <div id="dsm"><div id="dsc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Discover Scripts</b><span class="sp"></span><button id="dsx">×</button></div><div id="dsl"></div></div></div>
 <div id="stm"><div id="stc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Bamboo Fountain</b><span class="sp"></span><button id="stx" title="Close (Esc)">×</button></div><div class="stp">Live Fountain screenplay editor. What would you like to do?</div><div id="stl"></div></div></div>
 <div id="lm"><div id="lc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Licenses</b><span class="sp"></span><button id="lx">×</button></div><pre id="lt"></pre></div></div>
-  <div id="main"><div id="side"><div id="sideSplit" title="Drag to resize (double-click to reset)"></div><div id="sideHead"><span>Outline</span><button id="sideToggle" title="Collapse outline">‹</button></div><div id="sideList"></div><div id="fileSec" class="empty"><div id="fileHead"><span id="projName">Files</span><span><button id="fNew" title="New note in folder root" hidden>+</button><button id="fRef" title="Refresh" hidden>↻</button><button id="fX" title="Close folder" hidden>×</button><button id="fOpenBtn" title="Open a project folder">Folder…</button></span></div><div id="fileTree"></div></div></div><div id="ed"></div><div id="notes" hidden><div id="nSplit"></div><div id="nCard"><div id="nHead"><span class="nl"><button id="nMd" class="tg" role="switch" title="Show all markdown (Ctrl/⌘+/)">Markdown</button><span class="fsel"><select id="nFont" title="Note font (code blocks always use Courier Prime)"><option value="courier">Courier Prime</option><option value="inter">Inter</option></select></span><button id="nBk" title="Back to the previous note (Alt+←)" disabled>‹</button></span><span id="nName"></span><span class="nr"><button id="nImg" title="Import an image (you can also paste or drop one into the note)">Import image</button><input type="file" id="nImgIn" accept="image/*" multiple hidden><button id="nSave">Save</button><button id="nPdf" title="Export this note as a PDF (opens the print dialog: choose Save as PDF)">PDF</button><button id="nX" title="Close">×</button></span></div><div id="nBody"><div id="mdEd"></div></div><div id="nBack" hidden><div id="nBackHead"></div><div id="nBackList"></div></div></div></div></div>
+  <div id="main"><div id="side"><div id="sideSplit" title="Drag to resize (double-click to reset)"></div><div id="sideHead"><span>Outline</span><button id="sideToggle" title="Collapse outline">‹</button></div><div id="sideList"></div><div id="fileSec" class="empty"><div id="fileHead"><span id="projName">Files</span><span><button id="fNew" title="New note in folder root" hidden>+</button><button id="fRef" title="Refresh" hidden>↻</button><button id="fX" title="Close folder" hidden>×</button><button id="fOpenBtn" title="Open a project folder">Folder…</button></span></div><div id="fileTree"></div></div></div><div id="ed"></div><div id="notes" hidden><div id="nSplit"></div><div id="nCard"><div id="nHead"><span class="nl"><button id="nMd" class="tg" role="switch" title="Show all markdown (Ctrl/⌘+/)">Markdown</button><span class="fsel"><select id="nFont" title="Note font (code blocks always use Courier Prime)"><option value="courier">Courier Prime</option><option value="inter">Inter</option></select></span><button id="nBk" title="Back to the previous note (Alt+←)" disabled>‹</button></span><span id="nName"></span><span class="nr"><span id="nStat" style="font-size:10px;color:var(--mu);margin-right:8px;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle"></span><button id="nImg" title="Import an image (you can also paste or drop one into the note)">Import image</button><input type="file" id="nImgIn" accept="image/*" multiple hidden><button id="nSave">Save</button><button id="nPdf" title="Export this note as a PDF (opens the print dialog: choose Save as PDF)">PDF</button><button id="nX" title="Close">×</button></span></div><div id="nBody"><div id="mdEd"></div></div><div id="nBack" hidden><div id="nBackHead"></div><div id="nBackList"></div></div></div></div></div>
  <div class="bar bot" id="fmt"></div>
  <div class="bar bot" id="stat" style="font-size:9px;color:var(--mu)"><span id="st1"></span><span class="sp"></span><span id="st2"><span id="sFile"></span><span id="sLoc"></span><span id="sBak"></span><span id="sSpell" title="Turn spell check on or off"></span><span id="sLic" title="Open-source licenses">Licenses</span></span></div>
 </div>
 <script type="module">
-import {EditorState,EditorSelection,RangeSetBuilder,Annotation,StateField} from "@codemirror/state";
+import {EditorState,EditorSelection,RangeSetBuilder,Annotation,StateField,Transaction,ChangeSet} from "@codemirror/state";
 import {EditorView,ViewPlugin,Decoration,WidgetType,keymap,drawSelection,lineNumbers,highlightActiveLineGutter} from "@codemirror/view";
 import {history,historyKeymap,defaultKeymap,insertNewline} from "@codemirror/commands";
 
@@ -377,6 +377,7 @@ opt.epNum=Math.min(99,Math.max(1,parseInt(opt.epNum)||1));
 showNums=opt.nums;
 const snFmt=n=>opt.numStyle==="101"?String(opt.epNum*100+n):String(n);   // scene number text for the chosen style (editor + PDF)
 let showRaw=localStorage.getItem("bf_raw")==="1";   // markdown toggle: show every marker, not just on the active line
+var syncFt=null,syncMd=null;   // live file-sync engines (created further down, see LIVE FILE SYNC)
 let fileName=localStorage.getItem("bf_name")||"untitled.fountain";
 let dirty=localStorage.getItem("bf_dirty")==="1";   // unsaved changes since last save/open
 function setDirty(v){dirty=v;try{localStorage.setItem("bf_dirty",v?"1":"0")}catch(e){}}
@@ -797,7 +798,7 @@ const makeState=doc=>EditorState.create({doc,extensions:[history(),drawSelection
         if(ln.number-1!==pendLine){const p=pending,pl=pendLine;pending=null;
           queueMicrotask(()=>{if(pl<view.state.doc.lines&&view.state.doc.line(pl+1).text.trim())setType(view,p,pl+1)})}
       }
-      if(u.docChanged){if(!dirty){setDirty(true);queueMicrotask(chrome)}queueAutosave()}})]});
+      if(u.docChanged&&!(syncFt&&syncFt.applying)){if(syncFt)syncFt.track(u);if(!dirty){setDirty(true);queueMicrotask(chrome)}queueAutosave()}})]});
 const view=new EditorView({parent:document.getElementById("ed"),state:makeState(saved??SAMPLE)});
 setTimeout(()=>loadSpell(view),300);
 // Force the web font to load (browsers only fetch it lazily) and re-measure once it's ready
@@ -960,8 +961,10 @@ function idbOp(mode,fn){return new Promise(res=>{try{
   const r=indexedDB.open("bf_fs",1);r.onupgradeneeded=()=>r.result.createObjectStore("h");r.onerror=()=>res();
   r.onsuccess=()=>{const tx=r.result.transaction("h",mode),rq=fn(tx.objectStore("h"));tx.oncomplete=()=>res(rq&&rq.result);tx.onerror=tx.onabort=()=>res()}
 }catch(e){res()}})}
-function setHandle(h){handle=h;if(FSA)idbOp("readwrite",st=>h?st.put(h,"cur"):st.delete("cur"))}
-if(FSA)idbOp("readonly",st=>st.get("cur")).then(h=>{if(h&&!handle)handle=h});
+function setHandle(h,text){handle=h;if(syncFt)syncFt.bind(h?(text==null?view.state.doc.toString():text):null);if(FSA)idbOp("readwrite",st=>h?st.put(h,"cur"):st.delete("cur"))}
+// Handle remembered from last session: if nothing was unsaved, the restored text is what the file held, so it is the merge base; otherwise the base is unknown.
+function restoreHandle(h){if(!h||handle)return;handle=h;if(syncFt)syncFt.bind(dirty?null:view.state.doc.toString());if(typeof renderTree==="function"&&root)renderTree()}
+if(FSA)idbOp("readonly",st=>st.get("cur")).then(restoreHandle);
 function setName(n){fileName=n||"untitled.fountain";localStorage.setItem("bf_name",fileName);SS.file="";chrome();bakState()}
 function loadDoc(text,pos){
   if(!text.trim())text=defaultDoc();                 // empty file => default title page
@@ -999,6 +1002,10 @@ function askUnsaved(what,clean,name=fileName){
 }
 // true = OK to replace the current document. A cancelled or failed save aborts.
 async function guard(what){
+  if(autoFile&&FSA&&handle){   // autosave is on and this document has a file: just make sure the latest edits are written, no prompt
+    if(!dirty)return true;
+    try{if(await save())return true}catch(e){console.error(e)}   // couldn't write (e.g. file access blocked): fall back to asking
+  }
   const r=await askUnsaved(what,!dirty);
   if(r==="cancel")return false;
   if(r==="save")return await save();
@@ -1007,6 +1014,158 @@ async function guard(what){
 const failed=(what,e)=>{console.error(e);alert("Couldn't "+what+": "+(e.message||e.name))};
 const flashSaved=()=>{SS.file="Saved "+hms();paint();const b=$("save");b.textContent="Saved \u2713";setTimeout(()=>b.textContent="Save",1200)};
 async function writeTo(h,txt){const w=await h.createWritable();await w.write(txt);await w.close()}
+
+// ── LIVE FILE SYNC: shared by the screenplay and the notes ──────────────────────────────────────────────────────────────────────────────────
+// Writing: a change is saved ~0.3 s after typing pauses (and at least every 1.5 s during continuous typing), straight to the real file, like Obsidian.
+// Reading: the saved file is checked every 0.4 s (and on window focus). If another program changed it, the change appears here immediately:
+//   - nothing unsaved here  -> the editor is updated in place (cursor, scroll and undo history stay put)
+//   - unsaved typing here   -> the outside edit is merged into the text (positions are mapped, nothing is lost), then the result is saved
+// Needs a file handle (Chrome / Edge / Opera). After a reload the browser may ask once to re-allow file access: the first click or key press does that.
+const SYNC_DEBOUNCE=300,SYNC_MAXWAIT=1500,SYNC_POLL=400;
+const RWP={mode:"readwrite"},RDP={mode:"read"};
+function textDiff(a,b){   // smallest single replacement that turns a into b
+  let s=0;const m=Math.min(a.length,b.length);
+  while(s<m&&a.charCodeAt(s)===b.charCodeAt(s))s++;
+  let ea=a.length,eb=b.length;
+  while(ea>s&&eb>s&&a.charCodeAt(ea-1)===b.charCodeAt(eb-1)){ea--;eb--}
+  const hi=c=>c>=0xD800&&c<0xDC00,lo=c=>c>=0xDC00&&c<0xE000;   // never cut an emoji in half
+  if(s>0&&hi(a.charCodeAt(s-1)))s--;
+  if(ea<a.length&&lo(a.charCodeAt(ea))){ea++;eb++}
+  return {from:s,to:ea,insert:b.slice(s,eb)};
+}
+function makeSync(o){   // o: view(), h() file handle, auto() autosave on?, dirty(), mark(bool), fix(text), say(text), after()
+  const S={base:null,mod:-1,size:-1,since:null,timer:0,first:0,busy:false,again:false,miss:0,empty:0,held:false,gone:false,pp:null,applying:false,armed:false,denied:false,tok:0};
+  const V=()=>o.view(),doc=()=>V().state.doc.toString();
+  const rs=()=>{try{S.since=ChangeSet.empty(V().state.doc.length)}catch(e){S.since=null}};
+  const put=c=>{S.applying=true;try{V().dispatch({changes:c,annotations:Transaction.addToHistory.of(false)})}finally{S.applying=false}};
+  async function ensureRW(h,manual){
+    try{if(await h.queryPermission(RWP)==="granted")return true}catch(e){return false}
+    if(manual){const r=await h.requestPermission(RWP);if(r==="granted"){S.denied=false;return true}return false}
+    needPerm();return false;
+  }
+  function needPerm(){   // a browser only asks for file access in response to a click or key press, so wait for the next one
+    if(S.denied){o.say("File access blocked – press Save to allow");return}
+    o.say("Live sync paused – click or press a key to re-allow file access");
+    if(S.armed)return;S.armed=true;
+    const ev=["pointerdown","keydown"];
+    const fn=e=>{
+      if(e.type==="keydown"&&(e.key==="Escape"||["Shift","Control","Alt","Meta"].includes(e.key)))return;
+      ev.forEach(t=>removeEventListener(t,fn,true));S.armed=false;
+      const h=o.h();if(!h)return;
+      h.requestPermission(RWP).then(r=>{
+        if(r==="granted"){S.denied=false;o.say("File access restored");api.pull().then(()=>{if(o.dirty())api.touch()})}
+        else{S.denied=true;o.say("File access blocked – press Save to allow")}
+      }).catch(()=>{S.denied=true});
+    };
+    ev.forEach(t=>addEventListener(t,fn,true));
+  }
+  function applyDisk(text){   // text = what the file holds now. true if the editor changed
+    const local=doc();
+    if(S.held)return false;
+    if(text===local){S.base=text;rs();if(o.dirty()){o.mark(false);o.after()}return false}
+    if(S.base===null){      // base unknown (restored session)
+      if(o.dirty()){S.held=true;o.say("File on disk differs from your unsaved changes – Save keeps yours");return false}
+      put(textDiff(local,text));S.base=text;rs();o.mark(false);o.after();o.say("Loaded from disk "+hms());return true;
+    }
+    if(text===S.base)return false;           // file was only touched, content is what we already know
+    if(local===S.base){                      // nothing unsaved here: take the outside version
+      put(textDiff(local,text));S.base=text;rs();o.mark(false);o.after();o.say("Updated from disk "+hms());return true;
+    }
+    try{                                     // both sides changed: map the outside edit over everything typed here since the last sync
+      const ext=ChangeSet.of(textDiff(S.base,text),S.base.length);
+      const loc=S.since&&S.since.length===S.base.length?S.since:ChangeSet.of(textDiff(S.base,local),S.base.length);
+      put(ext.map(loc));
+      S.base=text;S.since=ChangeSet.of(textDiff(text,doc()),text.length);
+      o.mark(true);o.after();o.say("Merged outside edit "+hms());api.touch();return true;
+    }catch(e){console.error(e);S.held=true;o.say("Couldn't merge outside edit – Save keeps yours");return false}
+  }
+  async function doPull(){
+    const h=o.h();if(!h)return false;const tok=S.tok;
+    try{if(await h.queryPermission(RDP)!=="granted"){needPerm();return false}}catch(e){return false}
+    let f;
+    try{f=await h.getFile()}
+    catch(e){   // some editors replace the file when saving, so it can vanish for a moment: only believe it after several misses
+      if(tok===S.tok&&e.name==="NotFoundError"&&++S.miss>=4&&!S.gone){S.gone=true;o.say("File was moved or deleted – press Save to choose a new place")}
+      return false;
+    }
+    if(tok!==S.tok)return false;
+    if(S.gone){S.gone=false;o.say("File found again")}
+    S.miss=0;
+    if(S.base!==null&&f.lastModified===S.mod&&f.size===S.size)return false;
+    let raw;try{raw=await f.text()}catch(e){return false}
+    if(tok!==S.tok||h!==o.h())return false;
+    if(!raw.trim()&&S.base&&S.base.trim()&&++S.empty<3)return false;   // an editor mid-save can leave the file empty for an instant: wait for it
+    S.empty=0;
+    if(V().composing)return false;           // never change text under an IME composition; try again next tick
+    S.mod=f.lastModified;S.size=f.size;
+    return applyDisk(o.fix(norm(raw)));
+  }
+  async function push(manual){
+    const h=o.h();if(!h)return false;
+    if(S.busy){
+      if(!manual){S.again=true;return false}
+      for(let i=0;i<100&&S.busy;i++)await new Promise(r=>setTimeout(r,50));   // a manual Save waits for the write already in flight
+    }
+    if(S.gone&&!manual)return false;
+    S.busy=true;const tok=S.tok;
+    try{
+      if(!await ensureRW(h,manual))return false;
+      if(!S.held)await api.pull();           // pick up anything changed outside first, so we never overwrite it
+      if(tok!==S.tok)return false;
+      if(S.held&&!manual)return false;
+      S.held=false;
+      const txt=doc();
+      if(txt===S.base){o.mark(false);if(manual)o.say("Saved "+hms());return true}
+      const snap=S.since;rs();               // edits made while the write is in flight accumulate in a fresh change set
+      try{await writeTo(h,txt)}catch(e){S.since=snap&&S.since?(()=>{try{return snap.compose(S.since)}catch(x){return null}})():null;throw e}
+      if(tok!==S.tok)return true;
+      S.base=txt;S.gone=false;
+      try{const f=await h.getFile();S.mod=f.lastModified;S.size=f.size}catch(e){S.mod=-1}
+      if(doc()===txt)o.mark(false);
+      o.after();o.say("Saved "+hms()+(manual?"":" (auto)"));
+      return true;
+    }catch(e){
+      if(manual)throw e;
+      console.error(e);
+      if(e.name==="NotFoundError"){S.gone=true;o.say("File was moved or deleted – press Save to choose a new place")}
+      else if(e.name==="NotAllowedError"||e.name==="SecurityError")needPerm();
+      else{o.say("Autosave failed – retrying");setTimeout(()=>api.touch(),3000)}
+      return false;
+    }finally{S.busy=false;if(S.again){S.again=false;api.touch()}}
+  }
+  const api={
+    get applying(){return S.applying},
+    bind(text){   // call whenever the editor starts showing a different file; text = what that file holds (null = unknown)
+      S.tok++;clearTimeout(S.timer);S.first=0;S.busy=false;S.again=false;S.miss=0;S.empty=0;S.held=false;S.gone=false;S.denied=false;S.mod=-1;S.size=-1;
+      S.base=text==null?null:text;
+      if(text!=null&&text===doc())rs();else S.since=null;
+    },
+    track(u){if(S.since&&u.docChanged){try{S.since=S.since.compose(u.changes)}catch(e){S.since=null}}},
+    touch(){
+      if(!o.auto()||!o.h()||S.held||S.gone)return;
+      clearTimeout(S.timer);S.first=S.first||Date.now();
+      S.timer=setTimeout(()=>{S.first=0;push(false)},Math.max(0,Math.min(SYNC_DEBOUNCE,S.first+SYNC_MAXWAIT-Date.now())));
+    },
+    push,pull(){return S.pp||(S.pp=doPull().catch(e=>{console.error(e);return false}).finally(()=>{S.pp=null}))},
+    poll(){if(S.busy||!o.h()||document.hidden)return;api.pull()},
+    flush(){clearTimeout(S.timer);S.first=0;if(o.auto()&&o.h()&&o.dirty())push(false)},   // window losing focus / closing: don't wait for the timer
+    async allow(){const h=o.h();return !!h&&await ensureRW(h,true)}
+  };
+  return api;
+}
+function syncStart(){
+  const all=f=>[syncFt,syncMd].forEach(s=>s&&f(s));
+  setInterval(()=>all(s=>s.poll()),SYNC_POLL);
+  addEventListener("focus",()=>all(s=>s.poll()));
+  addEventListener("blur",()=>all(s=>s.flush()));
+  addEventListener("pagehide",()=>all(s=>s.flush()));
+  document.addEventListener("visibilitychange",()=>all(s=>document.hidden?s.flush():s.poll()));
+}
+syncFt=makeSync({view:()=>view,h:()=>handle,auto:()=>autoFile&&FSA,dirty:()=>dirty,
+  mark:v=>{if(dirty!==v){setDirty(v);chrome()}},
+  fix:t=>t.trim()?t:defaultDoc(),
+  say:s=>{if(SS.file!==s){SS.file=s;paint()}},
+  after:()=>{try{localStorage.setItem("bf_cm_doc",view.state.doc.toString())}catch(e){}}});
 
 // File-type chooser for the file tree's + button. Resolves "fountain", "md", or null when cancelled.
 function askNewKind(o={}){   // o: {title,q,fsub,msub} lets Open reuse this chooser with its own wording
@@ -1049,7 +1208,7 @@ async function openFile(){
   if(kind==="md"){
     try{
       if(nh&&!await guardNote("opening another note"))return;        // ask first, so cancelling the picker never discards anything
-      const [h]=await showOpenFilePicker({types:[{description:"Markdown",accept:{"text/markdown":[".md",".markdown"]}}],multiple:false,startIn:root||undefined});
+      const [h]=await showOpenFilePicker({types:[{description:"Markdown",accept:{"text/markdown":[".md",".markdown"]}}],multiple:false,startIn:root||undefined,mode:"readwrite"});
       await openNote(h,null,true);renderTree();
     }catch(e){if(e.name!=="AbortError")failed("open the note",e)}
     return;
@@ -1057,7 +1216,7 @@ async function openFile(){
   if(!await guard("opening another file"))return;     // save/discard prompt comes first, then the file picker
   if(!FSA)return $("file").click();
   let h;
-  try{[h]=await showOpenFilePicker({types:FT,multiple:false})}
+  try{[h]=await showOpenFilePicker({types:FT,multiple:false,mode:"readwrite"})}
   catch(e){if(e.name!=="AbortError")failed("open the file",e);return}
   try{const text=norm(await (await h.getFile()).text());
     loadDoc(text,0);setHandle(h);setName(h.name)}        // assign handle AFTER loadDoc (it clears it)
@@ -1074,7 +1233,7 @@ async function saveAs(){
   }
   try{
     const h=await showSaveFilePicker({suggestedName:fileName,types:FT,...(handle?{startIn:handle}:{})});
-    SS.file="Saving…";paint();await writeTo(h,txt);setHandle(h);setDirty(false);setName(h.name);flashSaved();return true;
+    SS.file="Saving…";paint();await writeTo(h,txt);setHandle(h,txt);setDirty(false);setName(h.name);flashSaved();return true;
   }catch(e){if(e.name!=="AbortError"){SS.file="";paint();failed("save the file",e)}return false}
 }
 
@@ -1084,9 +1243,10 @@ async function save(){
   if(!FSA){tellFallback();download(txt,fileName);setDirty(false);chrome();SS.file="Downloaded "+hms();paint();return true}
   if(!handle)return saveAs();
   try{
-    // handles from the Open picker start read-only; this asks once per session if needed
-    if(await handle.queryPermission({mode:"readwrite"})!=="granted"&&await handle.requestPermission({mode:"readwrite"})!=="granted")return false;
-    SS.file="Saving…";paint();await writeTo(handle,txt);setDirty(false);chrome();flashSaved();return true;
+    SS.file="Saving…";paint();
+    const ok=await syncFt.push(true);       // asks for write access if needed, merges any outside change, then writes
+    if(!ok){SS.file="";paint();return false}
+    chrome();flashSaved();return true;
   }catch(e){
     SS.file="";paint();
     if(e.name==="AbortError")return false;
@@ -1347,7 +1507,8 @@ const SS={loc:"",bak:"",file:"",bakAct:false};
 const hms=()=>new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
 function paint(){$("sFile").textContent=SS.file;$("sLoc").textContent=SS.loc;$("sBak").textContent=SS.bak;$("sBak").classList.toggle("act",SS.bakAct)}
 function queueAutosave(){
-  queueFileSave();
+  if(syncFt)syncFt.touch();
+  if(autoFile&&FSA&&!handle&&SS.file!=="Autosave to file: press Save once to choose a file"){SS.file="Autosave to file: press Save once to choose a file"}
   SS.loc="Autosaving…";paint();clearTimeout(window._a);
   window._a=setTimeout(()=>{
     try{localStorage.setItem("bf_cm_doc",view.state.doc.toString());SS.loc="Autosaved "+hms()}catch(e){console.error(e);SS.loc="Browser autosave failed"}
@@ -1388,52 +1549,26 @@ function queueBackup(){   // 3 s after typing stops, and at least every 30 s whi
   clearTimeout(bakTimer);bakFirst=bakFirst||Date.now();
   bakTimer=setTimeout(()=>{bakFirst=0;writeBackup()},Math.max(0,Math.min(3000,bakFirst+30000-Date.now())));
 }
-// ── Autosave to the opened file (the Autosave toggle between Save and Save As). Runs in addition to the localStorage autosave and the .bak file, never instead of them. ──
-// Writes only when a file handle exists and write permission is already granted (a browser only asks for permission on a click, so after a reload press Save once to resume).
-let autoFile=localStorage.getItem("bf_autofile")==="1",fileTimer=0,fileFirst=0,fileBusy=false,fileAgain=false;
+// ── Autosave toggle (between Save and Save As). On by default. Controls writing to the open file for BOTH the screenplay and the open note; reading outside changes is always on.
+// The browser autosave (localStorage) and the .bak file keep running either way. The sync engine above does the work. ──
+let autoFile=localStorage.getItem("bf_autofile")!=="0";
 function autoFileLbl(){
   const b=$("autoFile"),on=autoFile&&FSA;
   b.disabled=!FSA;b.classList.toggle("on",on);
-  b.title=!FSA?"Autosave to file isn't available: "+FSA_WHY:on?"Autosave to the open file is ON. Click to turn off (the browser autosave and .bak backup keep running)":"Autosave to the open file is OFF. Click to turn on (the browser autosave and .bak backup keep running)";
+  b.title=!FSA?"Autosave to file isn't available: "+FSA_WHY:on?"Autosave is ON: the screenplay and the open note are saved to their files as you type, and outside changes to those files appear here. Click to turn off":"Autosave is OFF: press Save to write to the file (outside changes still appear here). Click to turn on";
 }
 function setAutoFile(v){autoFile=v;try{localStorage.setItem("bf_autofile",v?"1":"0")}catch(e){}autoFileLbl()}
-function queueFileSave(){   // 2 s after typing stops, and at least every 15 s while typing continues
-  if(!autoFile||!FSA)return;
-  if(!handle){SS.file="Autosave to file: press Save once to choose a file";return}
-  clearTimeout(fileTimer);fileFirst=fileFirst||Date.now();
-  fileTimer=setTimeout(()=>{fileFirst=0;autoFileWrite()},Math.max(0,Math.min(2000,fileFirst+15000-Date.now())));
-}
-async function autoFileWrite(){
-  if(!autoFile||!FSA||!handle)return;
-  if(fileBusy){fileAgain=true;return}
-  const h=handle;
-  try{if(await h.queryPermission(RW)!=="granted"){SS.file="Autosave to file paused – press Save to resume";paint();return}}
-  catch(e){return}
-  const txt=view.state.doc.toString();
-  fileBusy=true;
-  try{
-    await writeTo(h,txt);
-    if(h===handle){                                    // still the same document
-      if(view.state.doc.toString()===txt){setDirty(false);chrome()}   // typed more while writing? stay unsaved, the next pass catches it
-      SS.file="Saved "+hms()+" (auto)";
-    }
-  }catch(e){console.error(e);SS.file="Autosave to file failed – press Save"}
-  fileBusy=false;paint();
-  if(fileAgain){fileAgain=false;queueFileSave()}
-}
 $("autoFile").onclick=async()=>{
   if(!FSA)return;
-  if(autoFile){setAutoFile(false);clearTimeout(fileTimer);fileFirst=0;SS.file="";paint();return}
-  setAutoFile(true);                                   // this click is the user gesture the browser needs for a file picker / permission prompt
+  if(autoFile){setAutoFile(false);SS.file="Autosave is off";paint();return}
+  setAutoFile(true);                                   // this click is the user gesture the browser needs for a permission prompt
   try{
-    if(!handle){if(!await saveAs())return setAutoFile(false)}   // untitled: choose the file first; cancelling leaves the toggle off
-    else{
-      if(await handle.queryPermission(RW)!=="granted"&&await handle.requestPermission(RW)!=="granted")return setAutoFile(false);
-      if(dirty)await save();
-    }
-  }catch(e){setAutoFile(false);if(e.name!=="AbortError")failed("turn on autosave to file",e)}
+    if(handle&&await syncFt.allow()&&dirty)await syncFt.push(true);
+    if(nh&&await syncMd.allow()&&nDirty)await syncMd.push(true);
+    if(!handle&&!nh){SS.file="Autosave is on – press Save once to choose a file";paint()}
+  }catch(e){if(e.name!=="AbortError")failed("turn on autosave",e)}
 };
-autoFileLbl();
+autoFileLbl();syncStart();
 document.querySelectorAll("button.tg").forEach(b=>{const sync=()=>b.setAttribute("aria-checked",b.classList.contains("on")?"true":"false");sync();new MutationObserver(sync).observe(b,{attributes:true,attributeFilter:["class"]})});
 $("sBak").onclick=async()=>{
   if(!SS.bakAct||!handle)return;
@@ -1450,7 +1585,7 @@ $("sBak").onclick=async()=>{
   }catch(e){if(e.name!=="AbortError")failed("set up the backup folder",e)}
 };
 if(FSA)Promise.all([idbOp("readonly",st=>st.get("cur")),idbOp("readonly",st=>st.get("dir"))]).then(([h,v])=>{
-  if(h&&!handle)handle=h;if(v&&v.d){bakDir=v.d;bakFor=v.n}bakState()});
+  restoreHandle(h);if(v&&v.d){bakDir=v.d;bakFor=v.n}bakState()});
 // ── 7b. PROJECT FOLDER + MARKDOWN NOTES ──
 // Folder tree lives under the outline. .fountain/.txt open in the main editor; .md opens in a notes pane.
 const DIRP=!!window.showDirectoryPicker&&window.top===window.self;
@@ -1473,7 +1608,10 @@ async function treeHtml(dh,path,depth,mp){
   for(const h of await listDir(dh)){
     const p=path+"/"+h.name,id=++nid,pad=`style="padding-left:${6+depth*10}px"`;mp.set(id,{h,p});
     if(h.kind==="directory"){const o=openDirs.has(p);s+=`<div class="fd" data-id="${id}" ${pad}>${o?"▾":"▸"} ${esc(h.name)}</div>`+(o?await treeHtml(h,p,depth+1,mp):"")}
-    else s+=`<div class="ff${p===shownFt||(nh&&p===nPath)?" cur":""}" data-id="${id}" ${pad} title="${esc(h.name)}"><i>${isMd(h.name)?"md":"ft"}</i>${esc(h.name)}</div>`;
+    else{
+      // highlight whatever is actually open: compare real file handles (a path would be lost after a reload, when the screenplay is restored from the remembered handle)
+      const cur=isMd(h.name)?(nh&&(p===nPath||h.name===nh.name&&await h.isSameEntry(nh).catch(()=>false))):(handle&&h.name===handle.name&&await h.isSameEntry(handle).catch(()=>false));
+      s+=`<div class="ff${cur?" cur":""}" data-id="${id}" ${pad} title="${esc(h.name)}"><i>${isMd(h.name)?"md":"ft"}</i>${esc(h.name)}</div>`}
   }
   return s;
 }
@@ -2210,11 +2348,16 @@ const makeMdState=doc=>EditorState.create({doc,extensions:[wlKeys,history(),draw
   keymap.of([{key:"Mod-s",run:()=>{saveNote();return true},preventDefault:true},{key:"Alt-ArrowLeft",run:()=>{noteBack();return true},preventDefault:true},{key:"Mod-/",run:()=>{setMdSrc(!mdSrc);return true},preventDefault:true},
     {key:"Mod-b",run:mdWrap("**"),preventDefault:true},{key:"Mod-i",run:mdWrap("*"),preventDefault:true},{key:"Backspace",run:pairBackspace(MD_PAIRS)},{key:"Enter",run:mdEnter},
     {key:"Tab",run:v=>mdIndent(v,1),shift:v=>mdIndent(v,-1)},...historyKeymap,...defaultKeymap]),
-  EditorView.updateListener.of(u=>{if(u.docChanged){nDirty=true;noteTitle();cacheNote()}
+  EditorView.updateListener.of(u=>{if(u.docChanged&&!(syncMd&&syncMd.applying)){nDirty=true;noteTitle();cacheNote();if(syncMd){syncMd.track(u);syncMd.touch()}}
     if(u.focusChanged&&!u.view.hasFocus)wlClose();else if(u.docChanged||u.selectionSet)wlUpdate(u.view);
     if(u.selectionSet||u.docChanged)u.view.requestMeasure()})]});   // fences show/hide with the cursor, which changes line heights without a doc change: re-measure so the next click maps to the right line
 
 const mdView=new EditorView({parent:$("mdEd"),state:makeMdState("")});
+syncMd=makeSync({view:()=>mdView,h:()=>nh,auto:()=>autoFile&&FSA,dirty:()=>nDirty,
+  mark:v=>{if(nDirty!==v){nDirty=v;noteTitle()}},
+  fix:t=>t,
+  say:s=>{const e=$("nStat");if(e&&e.textContent!==s){e.textContent=s;e.title=s}},
+  after:()=>cacheNote(true)});
 
 function noteTitle(){$("nName").textContent=(nDirty?"● ":"")+(nh?nh.name:"")}
 function syncMode(){
@@ -2231,21 +2374,25 @@ async function openNote(h,p,skipGuard){
   }
   const text=norm(await (await h.getFile()).text());
   mmOk=false;for(const g of mmGrants){if(g===h||await g.isSameEntry(h).catch(()=>false)){mmOk=true;break}}   // allowed earlier this session? (per note, not global)
-  closeFull();imgReset();nh=h;nPath=p||null;mdView.setState(makeMdState(text));nDirty=false;
+  closeFull();imgReset();nh=h;nPath=p||null;mdView.setState(makeMdState(text));nDirty=false;syncMd.bind(text);$("nStat").textContent="";
   $("notes").hidden=false;applyNotes();noteTitle();renderTree();mdView.focus();
   wlClose();navBtn();renderBack();ensureVault(15000);rememberNote();
 }
 async function saveNote(){
   if(!nh)return false;
   try{
-    if(await nh.queryPermission({mode:"readwrite"})!=="granted"&&await nh.requestPermission({mode:"readwrite"})!=="granted")return false;
-    await writeTo(nh,mdView.state.doc.toString());nDirty=false;noteTitle();cacheNote(true);
+    if(!await syncMd.push(true))return false;       // asks for write access if needed, merges any outside change, then writes
+    nDirty=false;noteTitle();cacheNote(true);
     const b=$("nSave");b.textContent="Saved ✓";setTimeout(()=>b.textContent="Save",1200);
     return true;
   }catch(e){failed("save the note",e);return false}
 }
 // Same Save / Don't Save / Cancel prompt as the screenplay. true = OK to leave the note; a cancelled or failed save aborts.
 async function guardNote(what){
+  if(autoFile&&FSA&&nh){       // autosave is on: write the latest edits and continue without a prompt
+    if(!nDirty)return true;
+    try{if(await saveNote())return true}catch(e){console.error(e)}
+  }
   const r=await askUnsaved(what,!nDirty,nh.name);
   if(r==="cancel")return false;
   if(r==="save")return await saveNote();
@@ -2545,7 +2692,7 @@ function forgetNote(){clearTimeout(ncT);if(FSA)idbOp("readwrite",st=>st.delete("
     if(text==null&&c)text=c.text;                        // no file access yet: use the saved copy
   }
   if(text==null||nh)return;
-  nh=rec.h;nPath=rec.p||null;mmOk=false;mdView.setState(makeMdState(text));nDirty=dirty;
+  nh=rec.h;nPath=rec.p||null;mmOk=false;mdView.setState(makeMdState(text));nDirty=dirty;syncMd.bind(dirty?null:text);
   $("notes").hidden=false;applyNotes();noteTitle();renderTree();wlClose();navBtn();renderBack();ensureVault(15000);   // same as openNote, minus taking focus from the startup dialog
 })();
 // ── STARTUP DIALOG: shown on every launch. Each choice reuses the existing action it names. ──
