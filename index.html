@@ -278,6 +278,32 @@ button.tg:disabled{opacity:.4;cursor:not-allowed}
 #mdEd .cm-line.md-fm{font:.85em/1.5 'Courier Prime','Courier New',Courier,monospace;color:var(--mu)}
 #mdEd .cm-line.md-tbl{font:.9em/1.5 'Courier Prime','Courier New',Courier,monospace}
 #mdEd .md-lm{color:var(--nm)}#mdEd .md-bul{color:var(--nm);display:inline-block;width:1.1em;text-align:center}#mdEd .md-chk{color:var(--ac);cursor:pointer;margin-right:.2em}
+/* Tables (rendered view): a real, editable table. The right margin and the strip below hold the row/column handles; the table itself lines up with the text. */
+#mdEd .tbw{padding:0 2px 0 6px;cursor:default}   /* 6px / 2px: the side padding CodeMirror gives every text line, so the table lines up with the text */
+#mdEd .tb{position:relative;margin:0 -22px 0 -22px;padding:4px 22px 4px 22px}   /* tight: the handles may overlap the neighbouring lines, they only show on hover */
+#mdEd .tb-sc{overflow-x:auto;border:1px solid var(--ncbd);border-radius:8px}
+#mdEd .tb table{border-collapse:collapse;width:100%;font-size:.9em;line-height:1.45}
+#mdEd .tb th,#mdEd .tb td{border:solid var(--ncbd);border-width:0 1px 1px 0;padding:0;vertical-align:top;min-width:5em;text-align:left;color:var(--tx);font-weight:400}
+#mdEd .tb th{background:var(--ncb);font-weight:600}
+#mdEd .tb tr>:last-child{border-right-width:0}
+#mdEd .tb tbody tr:last-child>*,#mdEd .tb table.ho th{border-bottom-width:0}
+#mdEd .tb .hr,#mdEd .tb .hc{background-image:linear-gradient(color-mix(in srgb,var(--tx) 5%,transparent),color-mix(in srgb,var(--tx) 5%,transparent))}
+#mdEd .tb .tc{padding:.32em .7em;min-height:1.45em;outline:none;cursor:text;white-space:pre-wrap;overflow-wrap:anywhere;caret-color:var(--ac)}
+#mdEd .tb .tc:focus{background:color-mix(in srgb,var(--ac) 11%,transparent);box-shadow:inset 0 0 0 1px var(--ac)}
+#mdEd .tb b{font-weight:700;color:var(--nb)}#mdEd .tb th b{color:inherit}
+#mdEd .tb i{color:var(--ni)}#mdEd .tb th i{color:inherit}
+#mdEd .tb s{text-decoration:line-through;color:var(--mu)}
+#mdEd .tb mark{background:var(--nh);color:inherit;border-radius:2px;padding:.05em 0}
+/* Handles: − removes the hovered row or column, + adds one after it; ⋯ opens the table menu. Shown while the pointer is over the table or a cell has the caret. */
+#mdEd .tbg{position:absolute;z-index:3;box-sizing:border-box;width:16px;height:16px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid var(--bd);background:var(--bar);color:var(--mu);font:600 13px/1 system-ui,-apple-system,'Segoe UI',sans-serif;letter-spacing:0;text-transform:none;cursor:pointer;user-select:none;opacity:0;pointer-events:none;transition:opacity .12s}
+#mdEd .tb.hv .tbg.on,#mdEd .tb:focus-within .tbg.on{opacity:1;pointer-events:auto}
+#mdEd .tbg.cn{font-size:11px;padding-bottom:3px}
+#mdEd .tbg:hover{color:var(--ac);border-color:var(--ac)}
+#mdEd .tbg.rm:hover{color:#e5534b;border-color:#e5534b}
+#mdEd .tb-menu{position:absolute;z-index:5;left:2px;top:18px;min-width:170px;padding:3px;background:var(--bar);border:1px solid var(--bd);border-radius:8px;box-shadow:0 8px 28px #0006;font:12px/1.3 system-ui,-apple-system,'Segoe UI',sans-serif;user-select:none}
+#mdEd .tb-menu div{padding:6px 10px;border-radius:5px;cursor:pointer;color:var(--tx);white-space:nowrap}
+#mdEd .tb-menu div:hover{background:color-mix(in srgb,var(--ac) 25%,transparent)}
+#mdEd .tb-menu div:last-child:hover{background:color-mix(in srgb,#e5534b 28%,transparent)}
 /* Source mode: monospace, line numbers, colours only (no sizes, weights or boxes), like the screenplay's Markdown view */
 #mdEd.src .cm-scroller,#mdEd.src .cm-content{font-family:var(--nf)!important}
 #mdEd.src .cm-content{font-size:12pt;line-height:1.5;margin:0!important;max-width:none}
@@ -323,14 +349,14 @@ button.tg:disabled{opacity:.4;cursor:not-allowed}
 <div id="dsm"><div id="dsc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Discover Scripts</b><span class="sp"></span><button id="dsx">×</button></div><div id="dsl"></div></div></div>
 <div id="stm"><div id="stc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Bamboo Fountain</b><span class="sp"></span><button id="stx" title="Close (Esc)">×</button></div><div class="stp">Live Fountain screenplay editor. What would you like to do?</div><div id="stl"></div></div></div>
 <div id="lm"><div id="lc"><div style="display:flex;align-items:center"><b style="color:var(--tx);font-size:12px">Licenses</b><span class="sp"></span><button id="lx">×</button></div><pre id="lt"></pre></div></div>
-  <div id="main"><div id="side"><div id="sideSplit" title="Drag to resize (double-click to reset)"></div><div id="sideHead"><span>Outline</span><button id="sideToggle" title="Collapse outline">‹</button></div><div id="sideList"></div><div id="fileSec" class="empty"><div id="fileHead"><span id="projName">Files</span><span><button id="fNew" title="New note in folder root" hidden>+</button><button id="fRef" title="Refresh" hidden>↻</button><button id="fX" title="Close folder" hidden>×</button><button id="fOpenBtn" title="Open a project folder">Folder…</button></span></div><div id="fileTree"></div></div></div><div id="ed"></div><div id="notes" hidden><div id="nSplit"></div><div id="nCard"><div id="nHead"><span class="nl"><button id="nMd" class="tg" role="switch" title="Show all markdown (Ctrl/⌘+/)">Markdown</button><span class="fsel"><select id="nFont" title="Note font (code blocks always use Courier Prime)"><option value="courier">Courier Prime</option><option value="inter">Inter</option></select></span><button id="nBk" title="Back to the previous note (Alt+←)" disabled>‹</button></span><span id="nName"></span><span class="nr"><span id="nStat" style="font-size:10px;color:var(--mu);margin-right:8px;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle"></span><button id="nImg" title="Import an image (you can also paste or drop one into the note)">Import image</button><input type="file" id="nImgIn" accept="image/*" multiple hidden><button id="nSave">Save</button><button id="nPdf" title="Export this note as a PDF (opens the print dialog: choose Save as PDF)">PDF</button><button id="nX" title="Close">×</button></span></div><div id="nBody"><div id="mdEd"></div></div><div id="nBack" hidden><div id="nBackHead"></div><div id="nBackList"></div></div></div></div></div>
+  <div id="main"><div id="side"><div id="sideSplit" title="Drag to resize (double-click to reset)"></div><div id="sideHead"><span>Outline</span><button id="sideToggle" title="Collapse outline">‹</button></div><div id="sideList"></div><div id="fileSec" class="empty"><div id="fileHead"><span id="projName">Files</span><span><button id="fNew" title="New note in folder root" hidden>+</button><button id="fRef" title="Refresh" hidden>↻</button><button id="fX" title="Close folder" hidden>×</button><button id="fOpenBtn" title="Open a project folder">Folder…</button></span></div><div id="fileTree"></div></div></div><div id="ed"></div><div id="notes" hidden><div id="nSplit"></div><div id="nCard"><div id="nHead"><span class="nl"><button id="nMd" class="tg" role="switch" title="Show all markdown (Ctrl/⌘+/)">Markdown</button><span class="fsel"><select id="nFont" title="Note font (code blocks always use Courier Prime)"><option value="courier">Courier Prime</option><option value="inter">Inter</option></select></span><button id="nBk" title="Back to the previous note (Alt+←)" disabled>‹</button></span><span id="nName"></span><span class="nr"><span id="nStat" style="font-size:10px;color:var(--mu);margin-right:8px;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle"></span><button id="nTbl" title="Insert a table at the cursor">Table</button><button id="nImg" title="Import an image (you can also paste or drop one into the note)">Import image</button><input type="file" id="nImgIn" accept="image/*" multiple hidden><button id="nSave">Save</button><button id="nPdf" title="Export this note as a PDF (opens the print dialog: choose Save as PDF)">PDF</button><button id="nX" title="Close">×</button></span></div><div id="nBody"><div id="mdEd"></div></div><div id="nBack" hidden><div id="nBackHead"></div><div id="nBackList"></div></div></div></div></div>
  <div class="bar bot" id="fmt"></div>
  <div class="bar bot" id="stat" style="font-size:9px;color:var(--mu)"><span id="st1"></span><span class="sp"></span><span id="st2"><span id="sFile"></span><span id="sLoc"></span><span id="sBak"></span><span id="sSpell" title="Turn spell check on or off"></span><span id="sLic" title="Open-source licenses">Licenses</span></span></div>
 </div>
 <script type="module">
 import {EditorState,EditorSelection,RangeSetBuilder,Annotation,StateField,Transaction,ChangeSet} from "@codemirror/state";
 import {EditorView,ViewPlugin,Decoration,WidgetType,keymap,drawSelection,lineNumbers,highlightActiveLineGutter} from "@codemirror/view";
-import {history,historyKeymap,defaultKeymap,insertNewline} from "@codemirror/commands";
+import {history,historyKeymap,defaultKeymap,insertNewline,undo,redo} from "@codemirror/commands";
 
 // ── 1. CLASSIFIER: one string in, a type per line out. Nothing else is stored. ──
 const SCENE=/^(INT|EXT|EST|INT\.\/EXT|INT\/EXT|I\/E)[\. ]/i, KEY=/^\s*(Title|Credit|Authors?|Draft date|Source|Notes|Copyright|Contact|Revision|Date|Draft)\s*:/i;
@@ -914,14 +940,16 @@ const NP={dark:{m:0,p:NPdef},space:{m:0,p:NPdef},light:{m:0,p:NPdef},
 catppuccin:{m:0,p:["#f38ba8","#fab387","#f9e2af","#a6e3a1","#74c7ec","#cba6f7","#f38ba8","#f5c2e7","#89b4fa","#94e2d5","#cba6f7"]},
 "tokyo-night":{m:0,p:["#f7768e","#ff9e64","#e0af68","#9ece6a","#7dcfff","#bb9af7","#ff9e64","#bb9af7","#7aa2f7","#7dcfff","#7aa2f7"]},
 "osaka-jade":{m:0,p:["#7ee8b8","#3dba7a","#f0c070","#56c8d8","#d87090","#8878d0","#f0c070","#89d4e0","#56c8d8","#7ee8b8","#3dba7a"]},
-gruvbox:{m:0,p:["#b8bb26","#d8a657","#e78a4e","#ea6962","#89b482","#d3869b","#fabd2f","#d3869b","#83a598","#8ec07c","#928374"]},
+gruvbox:{m:0,p:["#fb4934","#d8a657","#b8bb26","#e78a4e","#89b482","#d3869b","#fabd2f","#d3869b","#83a598","#8ec07c","#928374"]},
 nord:{m:0,p:["#bf616a","#d08770","#ebcb8b","#a3be8c","#88c0d0","#b48ead","#ebcb8b","#b48ead","#88c0d0","#a3be8c","#81a1c1"]}};
 const NPK=["h1","h2","h3","h4","h5","h6","nb","ni","nl","nc","nq"];
 const npMix=(c,n)=>`color-mix(in srgb,${c} ${n}%,var(--tx))`;   // pull dark/low-contrast accents toward the text colour
 function notesPal(t,i){
   const n=NP[t];if(n&&n.m===i)return n.p;
   const [,ac,ch,tr,ly]=TH[t][7][i],trc=npMix(tr,65);
-  return [ac,ch,trc,ly,npMix(ac,55),"var(--mu)",ch,npMix(ch,60),ly,trc,ac];
+  const pal=[ac,ch,trc,ly,npMix(ac,55),"var(--mu)",ch,npMix(ch,60),ly,trc,ac];
+  if(t==="gruvbox"&&i===4)[pal[0],pal[2]]=[pal[2],pal[0]];   // Gruvbox Red: H1 takes the green, H3 the red
+  return pal;
 }
 let themeKey=localStorage.getItem("bf_theme"),accentIdx=+localStorage.getItem("bf_accent");
 // "auto" follows the system light/dark setting (and updates live when it changes)
@@ -1885,7 +1913,7 @@ function mdBuild(state){
     if((m=/^(\s*>\s?)+/.exec(s))){LD("md-q");H(0,m[0].length);inl(m[0].length);continue}
     if(/^\s*\|.*\|\s*$/.test(s)){
       LD("md-tbl");
-      if(/^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(s)){out.push(dim.range(ln.from,ln.to));continue}
+      if(/^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/.test(s)){out.push(dim.range(ln.from,ln.to));continue}
       inl(0);continue;
     }
     if((m=/^(\s*)([-*+]|\d+[.)])(\s+)(\[( |x)\]\s+)?/i.exec(s))){
@@ -2104,6 +2132,336 @@ const cbField=StateField.define({
   update(v,tr){return tr.docChanged||tr.selection||tr.annotation(MdRef)?cbBuild(tr.state):v},
   provide:f=>EditorView.decorations.from(f)
 });
+// ----- Tables -----
+// A pipe table (header row, a |---| delimiter row, body rows) is drawn as a real table in the rendered view and edited right there. The Markdown stays the
+// single source of truth: typing in a cell rewrites only that cell's slice of the document, and adding or removing a row or column rewrites only the affected
+// lines. Because every change is an ordinary transaction, undo/redo, autosave and the merge with outside edits (makeSync) all work as they do for any other text.
+// While a cell has the caret it shows its Markdown; when you leave it, it is drawn (bold, links, code...). The cursor entering the table's lines from the
+// keyboard (or "Edit as Markdown" in the ⋯ menu) shows the table as source instead, like code blocks; Markdown view never draws tables.
+// Cells are split on unescaped pipes (a literal pipe is written \|), the same rule the PDF export uses.
+const TB_ROW=/^\s*\|.*\|\s*$/,TB_DELIM=/^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/;
+const tbPipes=s=>{const p=[];for(let i=0;i<s.length;i++)if(s[i]==="|"&&s[i-1]!=="\\")p.push(i);return p};
+const tbUnesc=s=>s.trim().replace(/\\\|/g,"|"),tbEsc=s=>s.replace(/\s*[\r\n]+\s*/g," ").replace(/\\?\|/g,"\\|").trim();
+// The table at the start of `text` (a run of table-looking lines): rows with their pipe positions, or null when it isn't a valid table.
+// Offsets are relative to the start of text. A later row that doesn't fit ends the table there (len says where).
+function tbModel(text){
+  const L=text.split("\n"),rows=[];let off=0;
+  for(let i=0;i<L.length;i++){
+    const s=L[i],ps=tbPipes(s);
+    if(!(TB_ROW.test(s)&&ps.length>=2&&s.trimEnd().length-1===ps[ps.length-1])){if(i<2)return null;break}
+    const cells=[];for(let k=0;k+1<ps.length;k++)cells.push({a:ps[k]+1,b:ps[k+1]});
+    if(i===1&&(!TB_DELIM.test(s)||cells.length!==rows[0].cells.length))return null;   // header and delimiter row must agree on the number of columns
+    rows.push({off,s,ps,cells});off+=s.length+1;
+  }
+  if(rows.length<2)return null;
+  const al=rows[1].cells.map(c=>{const t=rows[1].s.slice(c.a,c.b).trim();return /^:-*:$/.test(t)?"center":/-:$/.test(t)?"right":/^:/.test(t)?"left":""});
+  return{rows,ncols:rows[0].cells.length,align:al,len:off-1};
+}
+// Valid tables in the note, found with the same fence and front-matter rules as mdBuild (lines inside code never count).
+function tblBlocks(doc){
+  const out=[];let n=1;
+  if(doc.line(1).text.trim()==="---")for(let k=2;k<=doc.lines;k++){const t=doc.line(k).text.trim();if(t==="---"||t==="..."){n=k+1;break}}
+  let f=null;
+  while(n<=doc.lines){
+    const s=doc.line(n).text;
+    if(f){const t=s.trim();if(t.length>=f.len&&t===f.ch.repeat(t.length))f=null;n++;continue}
+    const m=/^\s*(`{3,}|~{3,})([^`\n]*)/.exec(s);
+    if(m){f={ch:m[1][0],len:m[1].length};n++;continue}
+    if(TB_ROW.test(s)){
+      let e=n;while(e<doc.lines&&TB_ROW.test(doc.line(e+1).text))e++;
+      const from=doc.line(n).from,md=tbModel(doc.sliceString(from,doc.line(e).to));
+      if(md){const last=n+md.rows.length-1;out.push({from,to:doc.line(last).to,first:n,last,text:doc.sliceString(from,doc.line(last).to)})}
+      n=e+1;continue;
+    }
+    n++;
+  }
+  return out;
+}
+const tbEmph=s=>s.replace(/\*\*\*(?=\S)(.+?)\*\*\*/g,"<b><i>$1</i></b>").replace(/\*\*(?=\S)(.+?)\*\*/g,"<b>$1</b>").replace(/~~(?=\S)(.+?)~~/g,"<s>$1</s>")
+  .replace(/==(?=\S)(.+?)==/g,"<mark>$1</mark>").replace(/\*(?=[^\s*])(.+?)\*/g,"<i>$1</i>").replace(/(^|\W)_(?=[^\s_])(.+?)_(?=\W|$)/g,"$1<i>$2</i>");
+// One cell's Markdown as HTML (an unfocused cell). Finished pieces are parked as placeholders so the emphasis rules can't reach inside them.
+function tbInline(t){
+  const keep=[],K=h=>"\u0000"+(keep.push(h)-1)+"\u0000",at=u=>u.replace(/"/g,"&quot;"),un=u=>u.replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&");
+  let s=esc(t);
+  s=s.replace(/`([^`\n]+)`/g,(m,c)=>K('<code class="md-c">'+c+"</code>"));
+  s=s.replace(/(!?)\[\[([^\[\]\n|\\]+?)(?:\\?\|([^\[\]\n]+))?\]\]/g,(m,e,g,a)=>{
+    if(e)return m;
+    const tg=un(g).trim(),ok=!tg.split("#")[0].trim()||wlFind(tg,nPath);
+    return K('<span class="md-wl'+(ok?"":" md-wl-x")+'" data-wl="'+at(tg)+'" title="Ctrl/⌘+click to open">'+(a||g.replace("#"," › "))+"</span>");
+  });
+  s=s.replace(/(!?)\[([^\]\n]*)\]\(([^)\s]*)(?:\s+"[^"]*")?\)/g,(m,e,tx,u)=>e?K('<i class="md-img">['+(tx||"image")+"]</i>"):K('<a class="md-a" data-href="'+at(un(u))+'" title="Ctrl/⌘+click to open">'+tbEmph(tx)+"</a>"));
+  s=tbEmph(s).replace(/&lt;br\s*\/?&gt;/gi,"<br>");
+  while(/\u0000\d+\u0000/.test(s))s=s.replace(/\u0000(\d+)\u0000/g,(m,i)=>keep[+i]);
+  return s;
+}
+const TB_PLAIN=(()=>{try{const d=document.createElement("div");d.contentEditable="plaintext-only";return d.contentEditable==="plaintext-only"}catch(e){return false}})();
+const tbIsTc=t=>t&&t.classList&&t.classList.contains("tc");
+// Caret position inside a cell as a character offset (null when the selection isn't in it), and the reverse
+function tbOff(tc){const s=getSelection();if(!s.rangeCount||!tc.contains(s.anchorNode))return null;const r=document.createRange();r.selectNodeContents(tc);r.setEnd(s.anchorNode,s.anchorOffset);return r.toString().length}
+function tbCaret(tc,pos){
+  const len=tc.textContent.length,p=pos==="start"?0:(pos==="end"||pos==null)?len:Math.max(0,Math.min(len,pos));
+  const w=document.createTreeWalker(tc,NodeFilter.SHOW_TEXT),r=document.createRange();let n,acc=0,done=false;
+  while((n=w.nextNode())){if(acc+n.length>=p){r.setStart(n,p-acc);done=true;break}acc+=n.length}
+  if(!done)r.selectNodeContents(tc);
+  r.collapse(true);const s=getSelection();s.removeAllRanges();s.addRange(r);
+}
+const tbRoot=(v,pos)=>{for(const el of v.contentDOM.querySelectorAll(".tbw")){try{if(v.posAtDOM(el)===pos)return el}catch(e){}}return null};
+// One table's DOM and behaviour. It lives as long as CodeMirror keeps the widget's element, and is handed new text through updateDOM.
+class TblCtl{
+  constructor(v){
+    this.v=v;this.text=null;this.self=false;this.cur=null;this.table=null;this._menu=null;
+    const root=this.root=document.createElement("div");root.className="tbw";root._tb=this;
+    const tb=this.tb=document.createElement("div");tb.className="tb";
+    const sc=this.sc=document.createElement("div");sc.className="tb-sc";tb.appendChild(sc);
+    const mk=(cls,txt,title,fn)=>{
+      const g=document.createElement("span");g.className="tbg "+cls;g.textContent=txt;g.title=title;g.setAttribute("role","button");g.setAttribute("aria-label",title);
+      g.onmousedown=e=>{e.preventDefault();e.stopPropagation()};   // keeps the caret in its cell while a handle is clicked
+      g.onclick=e=>{e.preventDefault();e.stopPropagation();fn()};tb.appendChild(g);return g;
+    };
+    this.gCm=mk("rm","−","Remove this column",()=>this.cur&&this.op("delCol",this.cur.c));
+    this.gCp=mk("ad","+","Add a column after this one",()=>this.cur&&this.op("addCol",this.cur.c));
+    this.gRm=mk("rm","−","Remove this row",()=>this.cur&&this.op("delRow",this.cur.r));
+    this.gRp=mk("ad","+","Add a row below this one",()=>this.cur&&this.op("addRow",this.cur.r));
+    this.gMn=mk("cn","⋯","Table options",()=>this.menu());
+    root.appendChild(tb);
+    root.addEventListener("pointerenter",()=>tb.classList.add("hv"));
+    root.addEventListener("pointerleave",()=>tb.classList.remove("hv"));
+    root.addEventListener("pointerover",e=>{const c=e.target.closest&&e.target.closest("td,th");if(c&&sc.contains(c))this.hover(c)});
+    root.addEventListener("mousedown",e=>this.down(e));
+    root.addEventListener("focusin",e=>this.fin(e));
+    root.addEventListener("focusout",e=>this.fout(e));
+    root.addEventListener("input",e=>this.inp(e));
+    root.addEventListener("keydown",e=>this.key(e));
+    root.addEventListener("paste",e=>this.paste(e));
+    root.addEventListener("beforeinput",e=>{if(tbIsTc(e.target)&&/^insert(Paragraph|LineBreak)$/.test(e.inputType))e.preventDefault()});   // a cell is one line
+    root.addEventListener("drop",e=>e.preventDefault());
+    sc.addEventListener("scroll",()=>this.paint());
+  }
+  set(text){if(text===this.text)return;this.text=text;if(!this.self)this.render()}   // self: the edit came from a cell, whose DOM already shows it
+  render(){
+    const m=tbModel(this.text),v=this.v,act=document.activeElement;
+    const keep=tbIsTc(act)&&this.root.contains(act)?{r:+act.parentNode.dataset.r,c:+act.parentNode.dataset.c,off:tbOff(act)}:null;
+    this.cur=null;this.menuClose();for(const g of [this.gCm,this.gCp,this.gRm,this.gRp])g.classList.remove("on");
+    if(!m){this.sc.textContent="";this.table=null;return}
+    const t=document.createElement("table"),mkRow=(row,dr,tag)=>{
+      const tr=document.createElement("tr");
+      for(let c=0;c<m.ncols;c++){
+        const ce=document.createElement(tag);ce.dataset.r=dr;ce.dataset.c=c;if(m.align[c])ce.style.textAlign=m.align[c];
+        const tc=document.createElement("div");tc.className="tc";tc.contentEditable=TB_PLAIN?"plaintext-only":"true";tc.spellcheck=false;tc.setAttribute("role","textbox");
+        const raw=row.cells[c]?tbUnesc(row.s.slice(row.cells[c].a,row.cells[c].b)):"";   // a row with too few cells has empty ones
+        tc._raw=raw;tc.innerHTML=tbInline(raw);ce.appendChild(tc);tr.appendChild(ce);
+      }
+      return tr;
+    };
+    const th=document.createElement("thead");th.appendChild(mkRow(m.rows[0],0,"th"));t.appendChild(th);
+    if(m.rows.length>2){const tbd=document.createElement("tbody");for(let li=2;li<m.rows.length;li++)tbd.appendChild(mkRow(m.rows[li],li-1,"td"));t.appendChild(tbd)}
+    else t.classList.add("ho");
+    this.sc.replaceChildren(t);this.table=t;
+    const p=(v._tbPend&&Date.now()-v._tbPend.t<800?v._tbPend:null)||keep;v._tbPend=null;   // an explicit request (focus the new row) beats "stay where the caret was"
+    if(p)requestAnimationFrame(()=>{if(this.root.isConnected&&this.table)this.focusCell(p.r,p.c,p.off!=null?p.off:p.where)});
+    v.requestMeasure();
+  }
+  locate(){   // where this table is in the document right now, and its current cell offsets
+    const v=this.v;let pos;try{pos=v.posAtDOM(this.root)}catch(e){return null}
+    const blk=v.state.field(tblField).blocks.find(b=>b.from===pos);if(!blk)return null;
+    const model=tbModel(v.state.sliceDoc(blk.from,blk.to));return model?{blk,from:blk.from,model}:null;
+  }
+  // ----- editing a cell: only that cell's slice of the document is replaced -----
+  edit(r,c,val,off){
+    const L=this.locate();if(!L)return;const row=L.model.rows[r===0?0:r+1];if(!row)return;
+    const f=L.from+row.off,v=this.v;let ch;
+    if(c<row.cells.length){ch={from:f+row.cells[c].a,to:f+row.cells[c].b,insert:" "+tbEsc(val)+" "};if(v.state.sliceDoc(ch.from,ch.to)===ch.insert)return}
+    else{if(!val.trim())return;ch={from:f+row.s.trimEnd().length,insert:"  |".repeat(c-row.cells.length)+" "+tbEsc(val)+" |"}}   // a short row grows to reach this cell
+    this.self=true;v._tbPend={r,c,off,t:Date.now()};   // _tbPend: if CodeMirror rebuilds the element instead of reusing it, the caret comes back to this cell
+    try{v.dispatch({changes:ch,userEvent:"input.type"})}finally{this.self=false;v._tbPend=null}
+  }
+  // ----- rows and columns: whole lines (or one slot in every line) are inserted or removed -----
+  op(kind,i,fc){
+    const L=this.locate();if(!L)return;
+    const m=L.model,f=L.from,ch=[],v=this.v,inside=this.root.contains(document.activeElement),cc=this.cur?this.cur.c:0;let pend=null;
+    if(kind==="addRow"){   // below display row i (the header's "below" is the first body row)
+      const row=m.rows[i===0?1:i+1],ind=/^\s*/.exec(row.s)[0];
+      ch.push({from:f+row.off+row.s.length,insert:"\n"+ind+"|"+"  |".repeat(m.ncols)});pend={r:i+1,c:fc==null?cc:fc,where:"start"};
+    }else if(kind==="delRow"){
+      if(i<1||!m.rows[i+1])return;const row=m.rows[i+1];
+      ch.push({from:f+row.off-1,to:f+row.off+row.s.length});if(inside)pend={r:Math.min(i,m.rows.length-3),c:cc,where:"start"};
+    }else if(kind==="addCol"){   // after column i (-1: at the very start)
+      m.rows.forEach((row,li)=>{if(row.ps.length>i+1)ch.push({from:f+row.off+row.ps[i+1]+1,insert:li===1?" --- |":"  |"})});
+      pend={r:this.cur?this.cur.r:0,c:i+1,where:"start"};
+    }else if(kind==="delCol"){
+      if(m.ncols<2)return;
+      m.rows.forEach(row=>{if(row.ps.length>i+1)ch.push({from:f+row.off+row.ps[i]+1,to:f+row.off+row.ps[i+1]+1})});
+      if(inside)pend={r:this.cur?this.cur.r:0,c:Math.min(i,m.ncols-2),where:"start"};
+    }
+    if(!ch.length)return;
+    if(pend){pend.t=Date.now();v._tbPend=pend}
+    try{v.dispatch({changes:ch,userEvent:"input"})}finally{v._tbPend=null}
+  }
+  // ----- the ⋯ menu -----
+  menu(){
+    if(this._menu)return this.menuClose();
+    const m=document.createElement("div");m.className="tb-menu";
+    const item=(t,fn)=>{const d=document.createElement("div");d.textContent=t;d.onmousedown=e=>{e.preventDefault();e.stopPropagation()};d.onclick=e=>{e.preventDefault();this.menuClose();fn()};m.appendChild(d)};
+    item("Add column at start",()=>this.op("addCol",-1));
+    item("Edit as Markdown",()=>{const L=this.locate();if(!L)return;this.v.dispatch({selection:{anchor:L.from+L.model.rows[0].s.length},scrollIntoView:true});this.v.focus()});
+    item("Delete table",()=>{
+      const L=this.locate();if(!L)return;const d=this.v.state.doc;let from=L.blk.from,to=L.blk.to;
+      if(to<d.length)to++;else if(from>0)from--;
+      this.v.dispatch({changes:{from,to},userEvent:"delete"});this.v.focus();
+    });
+    this.tb.appendChild(m);this._menu=m;
+    this._md=e=>{if(!m.contains(e.target)&&!e.target.closest(".tbg.cn"))this.menuClose()};
+    setTimeout(()=>{if(this._menu===m)document.addEventListener("mousedown",this._md,true)},0);
+  }
+  menuClose(){if(this._menu){this._menu.remove();this._menu=null;document.removeEventListener("mousedown",this._md,true)}}
+  // ----- hover handles: the row and column under the pointer (or the caret) get a − to remove them and a + to add after them -----
+  hover(cell){
+    if(!cell||cell.dataset.r==null)return;
+    this.cur={r:+cell.dataset.r,c:+cell.dataset.c,td:cell};this.paint();
+  }
+  paint(){
+    const cu=this.cur,t=this.table;if(!cu||!t||!cu.td.isConnected)return;
+    for(const e of t.querySelectorAll(".hr,.hc"))e.classList.remove("hr","hc");
+    for(const cell of t.rows[cu.r].cells)cell.classList.add("hr");
+    for(const row of t.rows)row.cells[cu.c].classList.add("hc");
+    const tb=this.tb.getBoundingClientRect(),sc=this.sc.getBoundingClientRect(),hc=t.rows[0].cells[cu.c].getBoundingClientRect(),rr=t.rows[cu.r].getBoundingClientRect();
+    const put=(g,x,y,show)=>{g.style.left=(x-8)+"px";g.style.top=(y-8)+"px";g.classList.toggle("on",!!show)};
+    // Column handles sit side by side under the table, centred on the hovered column; row handles are stacked in the right margin, centred on the row; ⋯ is above the top-left corner
+    const cx=Math.max(sc.left+19,Math.min(sc.right-19,(hc.left+hc.right)/2))-tb.left,by=sc.bottom-tb.top+8;
+    put(this.gCm,cx-9,by,t.rows[0].cells.length>1);
+    put(this.gCp,cx+9,by,true);
+    const rx=sc.right-tb.left+11,ry=rr.top+rr.height/2-tb.top;
+    put(this.gRm,rx,ry-9,cu.r>0);
+    put(this.gRp,rx,ry+9,true);
+    put(this.gMn,10,8,true);
+  }
+  // ----- focus and caret -----
+  activate(tc,x,y){   // focus a cell (it switches to its Markdown) and put the caret under the pointer, else at the end
+    tc.focus();
+    if(x!=null){
+      let r=null;
+      if(document.caretRangeFromPoint)r=document.caretRangeFromPoint(x,y);
+      else if(document.caretPositionFromPoint){const p=document.caretPositionFromPoint(x,y);if(p){r=document.createRange();r.setStart(p.offsetNode,p.offset);r.collapse(true)}}
+      if(r&&tc.contains(r.startContainer)){const s=getSelection();s.removeAllRanges();s.addRange(r);return}
+    }
+    tbCaret(tc,"end");
+  }
+  focusCell(r,c,where,from){   // where: "start" | "end" | a character offset | "x" (keep the caret's column, coming from the cell `from`)
+    const t=this.table;if(!t)return;
+    const row=t.rows[Math.max(0,Math.min(t.rows.length-1,r))],cell=row.cells[Math.max(0,Math.min(row.cells.length-1,c))],tc=cell.firstChild;
+    if(where==="x"&&from){
+      const s=getSelection(),rc=s.rangeCount?s.getRangeAt(0).getClientRects()[0]:null,fr=from.getBoundingClientRect(),tr=tc.getBoundingClientRect();
+      return this.activate(tc,rc?rc.left:fr.left+8,fr.top>tr.top?tr.bottom-12:tr.top+14);
+    }
+    tc.focus();
+    if(where==="all"){const r=document.createRange(),s=getSelection();r.selectNodeContents(tc);s.removeAllRanges();s.addRange(r)}
+    else tbCaret(tc,where);
+  }
+  focusEdge(last,x,end){   // entering from the editor: the first or last row, the column nearest x (or the first/last cell)
+    const t=this.table;if(!t)return;
+    const row=t.rows[last?t.rows.length-1:0];let c=last&&end?row.cells.length-1:0;
+    if(x!=null){let best=1e9;[...row.cells].forEach((cell,i)=>{const b=cell.getBoundingClientRect(),d=x<b.left?b.left-x:x>b.right?x-b.right:0;if(d<best){best=d;c=i}})}
+    this.focusCell(+row.cells[0].dataset.r,c,end?"end":"start");
+  }
+  exit(fwd){   // leave the table for the line after (or before) it; an empty line is added when the table is at the very end (or start)
+    const L=this.locate();if(!L)return;const v=this.v,len=v.state.doc.length;let ch,pos;
+    if(fwd){if(L.blk.to<len)pos=L.blk.to+1;else{ch={from:len,insert:"\n"};pos=len+1}}
+    else{if(L.blk.from>0)pos=L.blk.from-1;else{ch={from:0,insert:"\n"};pos=0}}
+    v.dispatch({changes:ch,selection:{anchor:pos},scrollIntoView:true,userEvent:"input"});v.focus();
+  }
+  // ----- events -----
+  down(e){
+    if(e.button!==0||e.target.closest(".tbg,.tb-menu"))return;
+    const a=e.target.closest("a[data-href],.md-wl");
+    if(a&&(e.ctrlKey||e.metaKey)){e.preventDefault();a.dataset.wl!=null?openWiki(a.dataset.wl):openLink(a.dataset.href);return}
+    const cell=e.target.closest("td,th");if(!cell||!this.sc.contains(cell))return;
+    const tc=cell.firstChild;
+    if(tc.contains(e.target)){if(document.activeElement===tc)return;e.preventDefault();this.activate(tc,e.clientX,e.clientY)}   // already editing: the browser places the caret itself
+    else{e.preventDefault();this.activate(tc)}   // the padding around the text
+  }
+  fin(e){const tc=e.target;if(!tbIsTc(tc))return;if(!tc._ed){tc._ed=true;tc.textContent=tc._raw}this.tb.classList.add("ed");this.hover(tc.parentNode)}   // while it has the caret, a cell shows its Markdown
+  fout(e){const tc=e.target;if(!tbIsTc(tc)||!tc._ed)return;tc._ed=false;tc.innerHTML=tbInline(tc._raw);if(!this.root.contains(e.relatedTarget))this.tb.classList.remove("ed")}
+  inp(e){
+    const tc=e.target;if(!tbIsTc(tc))return;
+    tc._raw=tc.textContent.replace(/[\u00a0\r\n]/g," ");
+    this.edit(+tc.parentNode.dataset.r,+tc.parentNode.dataset.c,tc._raw,tbOff(tc));
+    this.paint();   // a wrapped line changes the row's height
+  }
+  paste(e){
+    if(!tbIsTc(e.target))return;e.preventDefault();
+    document.execCommand("insertText",false,((e.clipboardData||window.clipboardData).getData("text/plain")||"").replace(/\s*[\r\n]+\s*/g," "));
+  }
+  key(e){
+    const tc=e.target;if(!tbIsTc(tc)||e.isComposing||e.key==="Process")return;
+    const td=tc.parentNode,r=+td.dataset.r,c=+td.dataset.c,k=e.key,v=this.v;
+    if(e.ctrlKey||e.metaKey){   // the cell's own undo would fight the editor's history, so the editor's is used
+      const q=k.toLowerCase();
+      if(!e.altKey&&q==="z"){e.preventDefault();(e.shiftKey?redo:undo)(v)}
+      else if(!e.altKey&&q==="y"){e.preventDefault();redo(v)}
+      else if(q==="a"){e.preventDefault();const r=document.createRange(),s=getSelection();r.selectNodeContents(tc);s.removeAllRanges();s.addRange(r)}   // the browser would select the whole note
+      else if(q==="s"){e.preventDefault();saveNote()}
+      else if(q==="/"){e.preventDefault();setMdSrc(!mdSrc)}
+      else if(q==="b"||q==="i"){e.preventDefault();const m=q==="b"?"**":"*",s=getSelection(),t=s.toString();document.execCommand("insertText",false,m+t+m);if(!t)for(let i=0;i<m.length;i++)s.modify("move","backward","character")}
+      return;
+    }
+    if(e.altKey)return;
+    const R=this.table.rows.length,C=this.table.rows[0].cells.length,off=tbOff(tc),len=tc.textContent.length,coll=getSelection().isCollapsed;
+    const multi=tc.clientHeight>parseFloat(getComputedStyle(tc).lineHeight)*1.7;   // a wrapped cell: Up/Down move within it first
+    if(k==="Tab"){
+      e.preventDefault();
+      if(e.shiftKey){if(c>0)this.focusCell(r,c-1,"all");else if(r>0)this.focusCell(r-1,C-1,"all");else this.exit(false)}
+      else if(c<C-1)this.focusCell(r,c+1,"all");else if(r<R-1)this.focusCell(r+1,0,"all");else this.op("addRow",r,0);   // Tab in the last cell adds a row
+    }else if(k==="Enter"){e.preventDefault();if(!e.shiftKey){if(r<R-1)this.focusCell(r+1,c,"end");else this.op("addRow",r,c)}}
+    else if(k==="Escape"){e.preventDefault();this.exit(true)}
+    else if(k==="ArrowUp"&&coll&&(!multi||off===0)){e.preventDefault();r>0?this.focusCell(r-1,c,"x",tc):this.exit(false)}
+    else if(k==="ArrowDown"&&coll&&(!multi||off===len)){e.preventDefault();r<R-1?this.focusCell(r+1,c,"x",tc):this.exit(true)}
+    else if(k==="ArrowLeft"&&coll&&off===0){if(c>0){e.preventDefault();this.focusCell(r,c-1,"end")}else if(r>0){e.preventDefault();this.focusCell(r-1,C-1,"end")}}
+    else if(k==="ArrowRight"&&coll&&off===len){if(c<C-1){e.preventDefault();this.focusCell(r,c+1,"start")}else if(r<R-1){e.preventDefault();this.focusCell(r+1,0,"start")}}
+  }
+}
+class TblW extends WidgetType{
+  constructor(text){super();this.text=text}
+  eq(o){return o.text===this.text}
+  ignoreEvent(){return true}   // the table handles its own clicks and keys
+  get estimatedHeight(){return this.text.split("\n").length*34+20}
+  toDOM(v){const T=new TblCtl(v);T.set(this.text);return T.root}
+  updateDOM(dom,v){const T=dom._tb;if(!T)return false;T.v=v;T.set(this.text);return true}   // same element, new text: the cell being typed in keeps its caret
+  destroy(dom){if(dom._tb)dom._tb.menuClose()}
+}
+function tblBuild(state){
+  if(mdSrc)return{blocks:[],deco:Decoration.none};   // Markdown (source) view never renders anything
+  const doc=state.doc,blocks=tblBlocks(doc),out=[];
+  for(const b of blocks){
+    if(state.selection.ranges.some(r=>doc.lineAt(r.from).number<=b.last&&doc.lineAt(r.to).number>=b.first&&!(r.empty&&r.from===0)))continue;   // the cursor in the table's lines shows its source (the idle cursor at the very start of a note doesn't, so a note that opens with a table still shows it)
+    out.push(Decoration.replace({widget:new TblW(b.text),block:true}).range(b.from,b.to));
+  }
+  return{blocks,deco:Decoration.set(out,true)};
+}
+const tblField=StateField.define({
+  create:tblBuild,
+  update(v,tr){return tr.docChanged||tr.selection||tr.annotation(MdRef)?tblBuild(tr.state):v},
+  provide:f=>[EditorView.decorations.from(f,v=>v.deco),EditorView.atomicRanges.of(view=>view.state.field(f).deco)]   // the cursor steps over a drawn table instead of into it
+});
+// Arrow keys, Backspace and Delete next to a drawn table move into its first/last cell instead of exposing (or, for Backspace, merging into) its lines.
+const tblKey=dir=>v=>{
+  if(mdSrc)return false;
+  const st=v.state,sel=st.selection.main;if(!sel.empty)return false;
+  const blocks=st.field(tblField).blocks;if(!blocks.length)return false;
+  const ln=st.doc.lineAt(sel.head),down=dir==="down"||dir==="right"||dir==="del";let blk;
+  if(down){
+    blk=blocks.find(b=>b.first===ln.number+1);if(!blk)return false;
+    if(dir==="down"){if(v.moveVertically(sel,true).head<blk.from)return false}   // still inside a wrapped line above
+    else if(sel.head!==ln.to)return false;
+  }else{
+    blk=blocks.find(b=>b.last===ln.number-1);if(!blk)return false;
+    if(dir==="up"){if(v.moveVertically(sel,false).head>blk.to)return false}
+    else if(sel.head!==ln.from)return false;
+  }
+  const root=tbRoot(v,blk.from);if(!root)return false;
+  const vert=dir==="up"||dir==="down",c=vert?v.coordsAtPos(sel.head):null;
+  root._tb.focusEdge(!down,c?c.left:null,dir==="left"||dir==="bs");
+  return true;
+};
 const mdWrap=m=>v=>{
   const r=v.state.selection.main,b=v.state.sliceDoc(r.from-m.length,r.from),a=v.state.sliceDoc(r.to,r.to+m.length);
   if(b===m&&a===m)v.dispatch({changes:[{from:r.from-m.length,to:r.from},{from:r.to,to:r.to+m.length}],selection:{anchor:r.from-m.length,head:r.to-m.length}});
@@ -2335,7 +2693,7 @@ async function renderBack(){
   bar(hits.length?"Backlinks · "+hits.length:"Backlinks");
   ls.innerHTML=hits.length?hits.map((h,i)=>`<div class="bl" data-i="${i}" title="${esc(h.f.path.slice(1))}"><b>${esc(h.f.name.replace(/\.(md|markdown)$/i,""))}</b><small>${esc(h.ctx)}</small></div>`).join(""):"No other notes link here yet.";
 }
-const makeMdState=doc=>EditorState.create({doc,extensions:[wlKeys,history(),drawSelection(),lineNumbers(),highlightActiveLineGutter(),EditorView.lineWrapping,mdLive,mmField,cbField,imgEvents,mdSpellPlugin,mdSpellMenu,autoPair(MD_PAIRS,true),EditorView.contentAttributes.of({spellcheck:"false"}),
+const makeMdState=doc=>EditorState.create({doc,extensions:[wlKeys,history(),drawSelection(),lineNumbers(),highlightActiveLineGutter(),EditorView.lineWrapping,mdLive,mmField,cbField,tblField,imgEvents,mdSpellPlugin,mdSpellMenu,autoPair(MD_PAIRS,true),EditorView.contentAttributes.of({spellcheck:"false"}),
   EditorView.domEventHandlers({mousedown:(e,v)=>{
     const a=e.target.closest&&e.target.closest(".md-a,.md-wl");
     if(!a||e.button!==0)return false;
@@ -2346,7 +2704,8 @@ const makeMdState=doc=>EditorState.create({doc,extensions:[wlKeys,history(),draw
     }
     e.preventDefault();a.dataset.wl!=null?openWiki(a.dataset.wl):openLink(a.dataset.href);return true}}),
   keymap.of([{key:"Mod-s",run:()=>{saveNote();return true},preventDefault:true},{key:"Alt-ArrowLeft",run:()=>{noteBack();return true},preventDefault:true},{key:"Mod-/",run:()=>{setMdSrc(!mdSrc);return true},preventDefault:true},
-    {key:"Mod-b",run:mdWrap("**"),preventDefault:true},{key:"Mod-i",run:mdWrap("*"),preventDefault:true},{key:"Backspace",run:pairBackspace(MD_PAIRS)},{key:"Enter",run:mdEnter},
+    {key:"Mod-b",run:mdWrap("**"),preventDefault:true},{key:"Mod-i",run:mdWrap("*"),preventDefault:true},{key:"ArrowDown",run:tblKey("down")},{key:"ArrowUp",run:tblKey("up")},{key:"ArrowRight",run:tblKey("right")},{key:"ArrowLeft",run:tblKey("left")},{key:"Backspace",run:tblKey("bs")},{key:"Delete",run:tblKey("del")},
+    {key:"Backspace",run:pairBackspace(MD_PAIRS)},{key:"Enter",run:mdEnter},
     {key:"Tab",run:v=>mdIndent(v,1),shift:v=>mdIndent(v,-1)},...historyKeymap,...defaultKeymap]),
   EditorView.updateListener.of(u=>{if(u.docChanged&&!(syncMd&&syncMd.applying)){nDirty=true;noteTitle();cacheNote();if(syncMd){syncMd.track(u);syncMd.touch()}}
     if(u.focusChanged&&!u.view.hasFocus)wlClose();else if(u.docChanged||u.selectionSet)wlUpdate(u.view);
@@ -2437,7 +2796,7 @@ function pdfInline(t,ctx){   // one line of Markdown -> HTML. Finished pieces ar
 }
 function pdfTable(T,ctx){
   const cells=r=>r.trim().replace(/^\|/,"").replace(/\|$/,"").replace(/\\\|/g,"\u0001").split("|").map(c=>c.replace(/\u0001/g,"|").trim());
-  if(!(T.length>1&&/^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(T[1])))return "<p>"+T.map(x=>pdfInline(x.trim(),ctx)).join("<br>")+"</p>";
+  if(!(T.length>1&&/^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/.test(T[1])))return "<p>"+T.map(x=>pdfInline(x.trim(),ctx)).join("<br>")+"</p>";
   const al=cells(T[1]).map(c=>/^:-*:$/.test(c)?"center":/-:$/.test(c)?"right":""),
     row=(r,tag)=>"<tr>"+cells(r).map((c,i)=>`<${tag}${al[i]?` style="text-align:${al[i]}"`:""}>${pdfInline(c,ctx)}</${tag}>`).join("")+"</tr>";
   return "<table><thead>"+row(T[0],"th")+"</thead><tbody>"+T.slice(2).map(r=>row(r,"td")).join("")+"</tbody></table>";
@@ -2551,6 +2910,22 @@ $("nImg").onclick=async()=>{
     if(!await noteBase()){const d=await pickNoteDir();if(d){const b=$("nImg");b.textContent="Folder set: click again";setTimeout(()=>b.textContent="Import image",2500)}return}
     $("nImgIn").click();
   }catch(e){if(e.name!=="AbortError")failed("choose the images folder",e)}
+};
+// "Table" button: a 3 × 3 table (header + two empty rows) goes in as its own paragraph after the cursor's line (after the table, if the cursor is inside one)
+$("nTbl").onclick=()=>{
+  if(!nh)return;
+  const v=mdView,doc=v.state.doc,ln=doc.lineAt(v.state.selection.main.head);
+  const inb=tblBlocks(doc).find(b=>ln.number>=b.first&&ln.number<=b.last),at=inb?doc.line(inb.last):ln;
+  const tx=at.text.trim()!=="",pos=tx?at.to:at.from,pre=tx?"\n\n":(at.number>1&&doc.line(at.number-1).text.trim()?"\n":"");
+  const hd=["Column 1","Column 2","Column 3"],tbl="| "+hd.join(" | ")+" |\n|---|---|---|\n|  |  |  |\n|  |  |  |";
+  const nx=tx&&at.number<doc.lines?doc.line(at.number+1):null,trail=nx&&!nx.text.trim()?"":"\n";   // a blank line already follows: don't add a second one
+  const from=pos+pre.length;
+  v.dispatch({changes:{from:pos,insert:pre+tbl+trail},selection:mdSrc?{anchor:from+2,head:from+10}:{anchor:from+tbl.length+1},scrollIntoView:true,userEvent:"input"});
+  if(mdSrc)return void v.focus();
+  requestAnimationFrame(()=>{   // the header's first cell gets the caret with its placeholder selected, ready to be typed over
+    const r=tbRoot(v,from),c=r&&r._tb;if(!c||!c.table)return v.focus();
+    c.focusCell(0,0,"start");getSelection().selectAllChildren(c.table.rows[0].cells[0].firstChild);
+  });
 };
 $("nImgIn").onchange=e=>{const fs=[...e.target.files];e.target.value="";addImages(mdView,fs,mdView.state.selection.main.head)};
 $("nX").onclick=async()=>{if(!await guardNote("closing "+nh.name))return;nh=null;nPath=null;nDirty=false;forgetNote();mmOk=false;imgReset();$("notes").hidden=true;navBack.length=0;navBtn();wlClose();renderBack();renderTree()};
